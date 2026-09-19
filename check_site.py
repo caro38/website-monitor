@@ -12,6 +12,17 @@ CORE_SERVICE_PAGES = [
     {"name": "重大政策與計畫專區", "url": "https://www.forest.gov.tw/plan"},
 ]
 
+# 站內搜尋每日輪替題庫（涵蓋林務局核心業務與民眾常用查詢詞）
+SEARCH_KEYWORDS_POOL = [
+    "步道",
+    "森林",
+    "保育",
+    "志工",
+    "國家森林遊樂區",
+    "苗木",
+    "登山",
+]
+
 
 def check_website():
   results = []
@@ -71,7 +82,9 @@ def check_website():
 
     soup = BeautifulSoup(res.text, "html.parser")
 
-    # 2. 第一層 Link 隨機抽檢 (共 20 組)
+    # ==========================================================
+    # 2. 第一層 Link 隨機抽檢 (共 20 組：名稱 + 完整可點擊網址)
+    # ==========================================================
     all_menu_links = []
     for a_tag in soup.find_all("a", href=True):
       href = a_tag["href"].strip()
@@ -90,7 +103,7 @@ def check_website():
 
         clean_url = full_url.split("#")[0]
         if clean_url != BASE_URL:
-          item = (clean_url, text[:14])
+          item = (clean_url, text)
           if item not in all_menu_links:
             all_menu_links.append(item)
 
@@ -110,16 +123,21 @@ def check_website():
           )
           if sub_res.status_code in [200, 301, 302, 307, 308]:
             link_items.append(
-                f'<span class="link-tag">✅ <a href="{link_url}" target="_blank" title="{link_url}">{link_text}</a> <span class="code">({sub_res.status_code})</span></span>'
+                f'<div class="link-item">✅ <b><a href="{link_url}" target="_blank">{link_text}</a></b><br>'
+                f'<a href="{link_url}" target="_blank" class="url-text">{link_url}</a> '
+                f'<span class="code">(狀態: {sub_res.status_code})</span></div>'
             )
           else:
             link_items.append(
-                f'<span class="link-tag-err">❌ <a href="{link_url}" target="_blank" title="{link_url}">{link_text}</a> <span class="code">({sub_res.status_code})</span></span>'
+                f'<div class="link-item err">❌ <b><a href="{link_url}" target="_blank">{link_text}</a></b><br>'
+                f'<a href="{link_url}" target="_blank" class="url-text">{link_url}</a> '
+                f'<span class="code">(異常: {sub_res.status_code})</span></div>'
             )
             link_broken += 1
         except Exception:
           link_items.append(
-              f'<span class="link-tag-err">❌ <a href="{link_url}" target="_blank">{link_text}</a> (逾時)</span>'
+              f'<div class="link-item err">❌ <b><a href="{link_url}" target="_blank">{link_text}</a></b><br>'
+              f'<a href="{link_url}" target="_blank" class="url-text">{link_url}</a> (連線逾時)</div>'
           )
           link_broken += 1
 
@@ -142,7 +160,9 @@ def check_website():
           )
       )
 
-    # 3. 最新公告頁面檢查（抽樣 5 篇）
+    # ==========================================================
+    # 3. 最新公告頁面檢查（抽樣 5 篇：完整標題與絕對路徑網址）
+    # ==========================================================
     news_links = []
     for a_tag in soup.find_all("a", href=True):
       href = a_tag["href"]
@@ -165,29 +185,37 @@ def check_website():
           n_res = requests.get(n_url, headers=headers, timeout=REQUEST_TIMEOUT)
           if n_res.status_code == 200:
             news_items.append(
-                f'✅ <a href="{n_url}" target="_blank">{n_title[:30]}...</a> <span class="tag">正常</span>'
+                f'<div class="news-item">✅ <b><a href="{n_url}" target="_blank">{n_title}</a></b><br>'
+                f'<a href="{n_url}" target="_blank" class="url-text">{n_url}</a> <span class="tag">正常載入</span></div>'
             )
           else:
             news_items.append(
-                f'❌ <a href="{n_url}" target="_blank">{n_title[:30]}...</a> <span class="tag-err">異常({n_res.status_code})</span>'
+                f'<div class="news-item err">❌ <b><a href="{n_url}" target="_blank">{n_title}</a></b><br>'
+                f'<a href="{n_url}" target="_blank" class="url-text">{n_url}</a> <span class="tag-err">異常({n_res.status_code})</span></div>'
             )
             news_error += 1
         except Exception:
           news_items.append(
-              f'❌ <a href="{n_url}" target="_blank">{n_title[:30]}...</a> <span class="tag-err">逾時</span>'
+              f'<div class="news-item err">❌ <b><a href="{n_url}" target="_blank">{n_title}</a></b><br>'
+              f'<a href="{n_url}" target="_blank" class="url-text">{n_url}</a> <span class="tag-err">連線逾時</span></div>'
           )
           news_error += 1
 
       if news_error == 0:
-        results.append(("最新公告頁面有效性 (抽樣 5 篇)", True, news_items, "normal"))
+        results.append(("最新公告頁面有效性 (抽樣 5 篇)", True, news_items, "full-card"))
       else:
         results.append(
-            ("最新公告頁面有效性 (抽樣 5 篇)", False, news_items, "normal")
+            ("最新公告頁面有效性 (抽樣 5 篇)", False, news_items, "full-card")
         )
         anomaly_count += 1
     else:
       results.append(
-          ("最新公告頁面有效性 (抽樣 5 篇)", True, ["未捕捉到公告結構"], "normal")
+          (
+              "最新公告頁面有效性 (抽樣 5 篇)",
+              True,
+              ["未捕捉到公告結構"],
+              "full-card",
+          )
       )
 
     # 4. 官方核心服務與專區可用性驗證
@@ -200,76 +228,93 @@ def check_website():
         s_res = requests.get(p_url, headers=headers, timeout=REQUEST_TIMEOUT)
         if s_res.status_code == 200:
           service_items.append(
-              f'✅ <a href="{p_url}" target="_blank"><b>{p_name}</b></a> (狀態碼: 200 正常)'
+              f'✅ <a href="{p_url}" target="_blank"><b>{p_name}</b></a><br>'
+              f'<a href="{p_url}" target="_blank" class="url-text">{p_url}</a> (狀態碼: 200 正常)'
           )
         else:
           service_items.append(
-              f'❌ <a href="{p_url}" target="_blank"><b>{p_name}</b></a> (異常代碼: {s_res.status_code})'
+              f'❌ <a href="{p_url}" target="_blank"><b>{p_name}</b></a><br>'
+              f'<a href="{p_url}" target="_blank" class="url-text">{p_url}</a> (異常代碼: {s_res.status_code})'
           )
           service_error += 1
       except Exception:
         service_items.append(
-            f'❌ <a href="{p_url}" target="_blank"><b>{p_name}</b></a> (連線逾時)'
+            f'❌ <a href="{p_url}" target="_blank"><b>{p_name}</b></a><br>'
+            f'<a href="{p_url}" target="_blank" class="url-text">{p_url}</a> (連線逾時)'
         )
         service_error += 1
 
     if service_error == 0:
       results.append(
-          ("官方核心服務與專區可用性驗證", True, service_items, "normal")
+          ("官方核心服務與專區可用性驗證", True, service_items, "full-card")
       )
     else:
       results.append(
-          ("官方核心服務與專區可用性驗證", False, service_items, "normal")
+          ("官方核心服務與專區可用性驗證", False, service_items, "full-card")
       )
       anomaly_count += 1
 
-    # 5. 站內搜尋功能驗證
-    search_keyword = "步道"
-    search_url = f"{BASE_URL.rstrip('/')}/search?q={search_keyword}"
+    # ==========================================================
+    # 5. 站內搜尋功能驗證（依日期自動輪替題庫中的關鍵字）
+    # ==========================================================
+    now_utc8 = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+    day_of_year = now_utc8.timetuple().tm_yday
+    current_keyword = SEARCH_KEYWORDS_POOL[
+        day_of_year % len(SEARCH_KEYWORDS_POOL)
+    ]
+
+    search_url = f"{BASE_URL.rstrip('/')}/search?q={current_keyword}"
     try:
       s_res = requests.get(search_url, headers=headers, timeout=REQUEST_TIMEOUT)
       if s_res.status_code == 200 and len(s_res.text) > 300:
         results.append(
             (
-                "站內搜尋功能驗證",
+                "站內搜尋功能驗證 (每日輪替)",
                 True,
                 [
-                    f'測試關鍵字：<a href="{search_url}" target="_blank"><code>{search_keyword}</code></a> (狀態碼: {s_res.status_code}) - 檢索引擎正常',
+                    f'輪替測試關鍵字：<code>{current_keyword}</code><br>'
+                    f'檢索網址：<a href="{search_url}" target="_blank" class="url-text">{search_url}</a> (狀態碼: {s_res.status_code}) - 檢索引擎運作正常'
                 ],
-                "normal",
+                "full-card",
             )
         )
       else:
         results.append(
             (
-                "站內搜尋功能驗證",
+                "站內搜尋功能驗證 (每日輪替)",
                 False,
                 [
-                    f'測試關鍵字：<a href="{search_url}" target="_blank"><code>{search_keyword}</code></a> (異常代碼)'
+                    f'輪替測試關鍵字：<code>{current_keyword}</code><br>'
+                    f'檢索網址：<a href="{search_url}" target="_blank" class="url-text">{search_url}</a> (異常代碼)'
                 ],
-                "normal",
+                "full-card",
             )
         )
         anomaly_count += 1
     except Exception:
       results.append(
-          ("站內搜尋功能驗證", False, ["搜尋模組連線逾時"], "normal")
+          (
+              "站內搜尋功能驗證 (每日輪替)",
+              False,
+              [
+                  f"輪替測試關鍵字：<code>{current_keyword}</code><br>搜尋模組連線逾時"
+              ],
+              "full-card",
+          )
       )
       anomaly_count += 1
 
   except Exception as e:
     overall_status = "系統異常 (Down)"
     overall_color = "#e74c3c"
-    results.append(("系統狀態", False, [f"無法連線: {str(e)}"], "normal"))
+    results.append(("系統狀態", False, [f"無法連線: {str(e)}"], "full-card"))
     anomaly_count += 99
 
   if anomaly_count > 0:
     overall_status = f"發現 {anomaly_count} 項異常"
     overall_color = "#e67e22" if anomaly_count < 3 else "#e74c3c"
 
-  now = (
-      datetime.datetime.utcnow() + datetime.timedelta(hours=8)
-  ).strftime("%Y-%m-%d %H:%M:%S")
+  now = now_utc8.strftime("%Y-%m-%d %H:%M:%S")
 
   cards_html = ""
   for title, is_success, details, layout_type in results:
@@ -287,7 +332,7 @@ def check_website():
         rows_html += f'<div class="card-row">{item}</div>'
 
     cards_html += f"""
-        <div class="card {'full-width' if layout_type == 'grid-links' else ''}">
+        <div class="card {'full-width' if layout_type == 'full-width' or layout_type == 'grid-links' else ''}">
             <div class="card-header">
                 <span class="card-title">{title}</span>
                 <span class="badge" style="background-color: {bg_color};">{status_text}</span>
@@ -306,7 +351,7 @@ def check_website():
     <title>機關網站日常檢核佐證報表</title>
     <style>
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f6; color: #2c3e50; margin: 0; padding: 15px; }}
-        .wrapper {{ max-width: 1050px; margin: 0 auto; background: white; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
+        .wrapper {{ max-width: 1100px; margin: 0 auto; background: white; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
         .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #edf2f7; padding-bottom: 12px; margin-bottom: 15px; }}
         .header-left h2 {{ margin: 0 0 4px 0; font-size: 20px; color: #1a202c; }}
         .header-left p {{ margin: 0; font-size: 12px; color: #718096; }}
@@ -319,17 +364,22 @@ def check_website():
         .card-title {{ font-weight: bold; font-size: 13px; color: #2d3748; }}
         .badge {{ color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }}
         
-        .card-body {{ display: flex; flex-direction: column; gap: 4px; }}
-        .card-row {{ font-size: 11px; color: #4a5568; background: #f8fafc; padding: 5px 10px; border-radius: 4px; border-left: 2px solid #3182ce; line-height: 1.3; }}
+        .card-body {{ display: flex; flex-direction: column; gap: 6px; }}
+        .card-row {{ font-size: 11px; color: #4a5568; background: #f8fafc; padding: 6px 10px; border-radius: 4px; border-left: 2px solid #3182ce; line-height: 1.4; }}
         
-        .links-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }}
-        .link-cell {{ font-size: 11px; background: #f8fafc; padding: 5px 8px; border-radius: 4px; border-left: 2px solid #3182ce; color: #2d3748; }}
-        .link-tag {{ display: inline-block; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
-        .link-tag-err {{ color: #c53030; font-weight: bold; }}
-        .code {{ color: #718096; font-size: 10px; }}
+        .links-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }}
+        .link-cell {{ font-size: 11px; background: #f8fafc; padding: 6px 10px; border-radius: 4px; border-left: 2px solid #3182ce; color: #2d3748; line-height: 1.4; }}
+        .link-item a {{ color: #2b6cb0; text-decoration: none; font-weight: bold; }}
+        .link-item a:hover {{ text-decoration: underline; }}
+        
+        .url-text {{ font-size: 10px; color: #718096; word-break: break-all; text-decoration: none; }}
+        .url-text:hover {{ text-decoration: underline; color: #3182ce; }}
+        
+        .code {{ color: #4a5568; font-size: 10px; font-weight: bold; }}
 
-        .card-body a, .card-row a, .link-cell a {{ color: #3182ce; text-decoration: none; }}
-        .card-body a:hover, .card-row a:hover, .link-cell a:hover {{ text-decoration: underline; color: #2b6cb0; }}
+        .news-item, .card-row {{ font-size: 11px; color: #4a5568; background: #f8fafc; padding: 6px 10px; border-radius: 4px; border-left: 2px solid #3182ce; line-height: 1.4; }}
+        .news-item a {{ color: #2b6cb0; text-decoration: none; font-weight: bold; }}
+        .news-item a:hover {{ text-decoration: underline; }}
 
         .tag {{ background: #e2e8f0; color: #4a5568; padding: 1px 4px; border-radius: 3px; font-size: 10px; float: right; }}
         .tag-err {{ background: #fed7d7; color: #c53030; padding: 1px 4px; border-radius: 3px; font-size: 10px; float: right; }}
@@ -374,7 +424,7 @@ def check_website():
 
   with open("index.html", "w", encoding="utf-8") as f:
     f.write(html_content)
-  print("錯誤修正版報表 index.html 產生成功！")
+  print("搜尋關鍵字每日輪替版報表 index.html 產生成功！")
 
 
 if __name__ == "__main__":
