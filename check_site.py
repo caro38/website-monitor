@@ -12,7 +12,7 @@ CORE_SERVICE_PAGES = [
     {"name": "重大政策與計畫專區", "url": "https://www.forest.gov.tw/plan"},
 ]
 
-# 站內搜尋每日輪替題庫（涵蓋林務局核心業務與民眾常用查詢詞）
+# 站內搜尋每日輪替題庫
 SEARCH_KEYWORDS_POOL = [
     "步道",
     "森林",
@@ -254,9 +254,7 @@ def check_website():
       )
       anomaly_count += 1
 
-    # ==========================================================
     # 5. 站內搜尋功能驗證（依日期自動輪替題庫中的關鍵字）
-    # ==========================================================
     now_utc8 = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
     day_of_year = now_utc8.timetuple().tm_yday
     current_keyword = SEARCH_KEYWORDS_POOL[
@@ -388,6 +386,18 @@ def check_website():
         .print-btn {{ background: #3182ce; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; box-shadow: 0 1px 3px rgba(49,130,206,0.3); }}
         .print-btn:hover {{ background: #2b6cb0; }}
 
+        /* RWD 響應式手機版適應設定：螢幕小於 768px 時自動改為單欄，避免擠壓跑版 */
+        @media screen and (max-width: 768px) {{
+            body {{ padding: 5px; }}
+            .wrapper {{ padding: 15px; width: 100%; box-sizing: border-box; }}
+            .grid-container {{ display: flex; flex-direction: column; gap: 10px; }}
+            .card.full-width {{ grid-column: span 1; }}
+            .links-grid {{ display: flex; flex-direction: column; gap: 6px; }}
+            .header {{ flex-direction: column; align-items: flex-start; gap: 10px; }}
+            .overall-badge {{ align-self: flex-start; }}
+        }}
+
+        /* A4 列印強制單頁輸出設定 */
         @media print {{
             @page {{ size: A4 portrait; margin: 10mm; }}
             body {{ background: white; padding: 0; zoom: 90%; }}
@@ -424,7 +434,7 @@ def check_website():
 
   with open("index.html", "w", encoding="utf-8") as f:
     f.write(html_content)
-  print("搜尋關鍵字每日輪替版報表 index.html 產生成功！")
+  print("手機響應式優化版報表 index.html 產生成功！")
 
 
 if __name__ == "__main__":
