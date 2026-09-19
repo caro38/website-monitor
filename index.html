@@ -10,7 +10,7 @@
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #edf2f7; padding-bottom: 24px; margin-bottom: 30px; }
         .header-left h2 { margin: 0 0 8px 0; font-size: 24px; color: #1a202c; }
         .header-left p { margin: 0; font-size: 14px; color: #718096; }
-        .overall-badge { padding: 10px 22px; color: white; background-color: #e74c3c; border-radius: 30px; font-weight: bold; font-size: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .overall-badge { padding: 10px 22px; color: white; background-color: #2ecc71; border-radius: 30px; font-weight: bold; font-size: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
         
         .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
@@ -44,7 +44,7 @@
                 <p>監控目標：<a href="https://www.forest.gov.tw/" target="_blank" style="color: #3182ce; text-decoration: none;">https://www.forest.gov.tw/</a></p>
             </div>
             <div>
-                <div class="overall-badge">狀態：發現 99 項異常</div>
+                <div class="overall-badge">狀態：全面正常 (Operational)</div>
             </div>
         </div>
 
@@ -52,18 +52,58 @@
             
         <div class="card">
             <div class="card-header">
-                <span class="card-title">系統狀態</span>
-                <span class="badge" style="background-color: #c0392b;">異常</span>
+                <span class="card-title">首頁可用性與核心關鍵字</span>
+                <span class="badge" style="background-color: #27ae60;">正常</span>
             </div>
             <div class="card-body">
-                <div class="card-row">無法連線執行: HTTPSConnectionPool(host='www.forest.gov.tw', port=443): Read timed out. (read timeout=6)</div>
+                <div class="card-row">目標網址: https://www.forest.gov.tw/</div><div class="card-row">HTTP 200 正常，成功檢出核心關鍵字「林業」</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">第一層 Link 導覽失效檢查</span>
+                <span class="badge" style="background-color: #27ae60;">正常</span>
+            </div>
+            <div class="card-body">
+                <div class="card-row">✅ <b>網站導覽</b> (狀態: 200)</div><div class="card-row">✅ <b>首長信箱</b> (狀態: 200)</div><div class="card-row">✅ <b>常見問答</b> (狀態: 200)</div><div class="card-row">✅ <b>雙語詞彙</b> (狀態: 200)</div><div class="card-row">✅ <b>廉政園地</b> (狀態: 200)</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">最新公告頁面有效性</span>
+                <span class="badge" style="background-color: #27ae60;">正常</span>
+            </div>
+            <div class="card-body">
+                <div class="card-row">✅ 漂流木撿拾公告 <span class='tag'>載入正常</span></div><div class="card-row">✅ 2026/09/18   最新消息 嘉義分署   林下良品五感饗宴 微風廣場登場 <span class='tag'>載入正常</span></div><div class="card-row">✅ 2026/09/18   最新消息 新竹分署   林業保育署深入山村傾聽林農心聲  南庄首場林農座談　攜手林農共創永續山林新未來 <span class='tag'>載入正常</span></div><div class="card-row">✅ 2026/09/18   最新消息 宜蘭分署   「在中間，奇遇自然」生物探索常設展9月23日開展  邀您到中間奇遇自然 <span class='tag'>載入正常</span></div><div class="card-row">✅ 2026/09/18   最新消息 屏東分署   農民可自主移除綠鬣蜥政府未禁止　申領獎勵須取得移除受訓認證 <span class='tag'>載入正常</span></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">公告與政策附件下載驗證</span>
+                <span class="badge" style="background-color: #27ae60;">正常</span>
+            </div>
+            <div class="card-body">
+                <div class="card-row">經快速掃描，未達 5 筆帶有檔案附件之項目</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">站內搜尋功能驗證</span>
+                <span class="badge" style="background-color: #27ae60;">正常</span>
+            </div>
+            <div class="card-body">
+                <div class="card-row">測試關鍵字：<code>步道</code></div><div class="card-row">HTTP 狀態碼：200 (檢索引擎與資料庫正常)</div>
             </div>
         </div>
         
         </div>
 
         <div class="footer">
-            <div>檢核執行時間（台北時間）：2026-09-19 13:21:32</div>
+            <div>檢核執行時間（台北時間）：2026-09-19 13:26:43</div>
             <div><button class="print-btn" onclick="window.print()">🖨️ 列印 / 儲存為正式 PDF 稽核報表</button></div>
         </div>
     </div>
