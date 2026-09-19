@@ -10,7 +10,7 @@
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 20px; margin-bottom: 20px; }
         .header-left h2 { margin: 0 0 5px 0; font-size: 22px; color: #2c3e50; }
         .header-left p { margin: 0; font-size: 13px; color: #7f8c8d; }
-        .overall-badge { padding: 8px 18px; color: white; background-color: #e74c3c; border-radius: 20px; font-weight: bold; font-size: 14px; text-align: center; }
+        .overall-badge { padding: 8px 18px; color: white; background-color: #2ecc71; border-radius: 20px; font-weight: bold; font-size: 14px; text-align: center; }
         
         .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
         .card { background: #fdfefe; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
@@ -39,7 +39,7 @@
                 <p>監控目標：<a href="https://www.forest.gov.tw/" target="_blank" style="color: #2980b9; text-decoration: none;">https://www.forest.gov.tw/</a></p>
             </div>
             <div>
-                <div class="overall-badge">狀態：發現 99 項異常</div>
+                <div class="overall-badge">狀態：全面正常 (Operational)</div>
             </div>
         </div>
 
@@ -58,21 +58,37 @@
                 <span class="card-title">第一層 Link 導覽失效檢查</span>
                 <span class="badge" style="background-color: #27ae60;">正常</span>
             </div>
-            <div class="card-desc"><b>具體抽樣導覽連結佐證：</b><br>✅ <b>網站導覽</b> (狀態: 200)<br>✅ <b>首長信箱</b> (狀態: 200)<br>✅ <b>常見問答</b> (狀態: 200)<br>✅ <b>雙語詞彙</b> (狀態: 200)<br>✅ <b>廉政園地</b> (狀態: 200)</div>
+            <div class="card-desc"><b>具體抽樣 5 個導覽連結佐證：</b><br>✅ <b>網站導覽</b> (狀態: 200)<br>✅ <b>首長信箱</b> (狀態: 200)<br>✅ <b>常見問答</b> (狀態: 200)<br>✅ <b>雙語詞彙</b> (狀態: 200)<br>✅ <b>廉政園地</b> (狀態: 200)</div>
         </div>
         
         <div class="card">
             <div class="card-header">
-                <span class="card-title">系統狀態</span>
-                <span class="badge" style="background-color: #c0392b;">異常</span>
+                <span class="card-title">最新公告頁面有效性</span>
+                <span class="badge" style="background-color: #27ae60;">正常</span>
             </div>
-            <div class="card-desc">無法連線執行: len() takes exactly one argument (0 given)</div>
+            <div class="card-desc"><b>具體抽樣 5 筆公告頁面佐證：</b><br>✅ <b>漂流木撿拾公告...</b> (公告頁面正常載入)<br>✅ <b>2026/09/18   最新消...</b> (公告頁面正常載入)<br>✅ <b>2026/09/18   最新消...</b> (公告頁面正常載入)<br>✅ <b>2026/09/18   最新消...</b> (公告頁面正常載入)<br>✅ <b>2026/09/18   最新消...</b> (公告頁面正常載入)</div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">最新公告附件下載驗證</span>
+                <span class="badge" style="background-color: #27ae60;">正常</span>
+            </div>
+            <div class="card-desc"><b>近期 5 筆公告掃描佐證：</b><br>經掃描近期 5 筆公告頁面，未直接檢出帶有 PDF/ODF 下載附件</div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">站內搜尋功能驗證</span>
+                <span class="badge" style="background-color: #27ae60;">正常</span>
+            </div>
+            <div class="card-desc"><b>檢索參數佐證：</b><br>測試關鍵字：<code>步道</code><br>狀態碼： 200 (引擎與資料庫回應正常)</div>
         </div>
         
         </div>
 
         <div class="footer">
-            <div>檢核執行時間（台北時間）：2026-09-19 12:44:57</div>
+            <div>檢核執行時間（台北時間）：2026-09-19 12:47:54</div>
             <div><button class="print-btn" onclick="window.print()">🖨️ 列印 / 儲存為正式 PDF 稽核報表</button></div>
         </div>
     </div>
