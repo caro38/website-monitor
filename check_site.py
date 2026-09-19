@@ -11,15 +11,17 @@ def check_website():
   overall_color = "#2ecc71"
   anomaly_count = 0
 
+  # 優化 1：設定統一的 User-Agent 與較短的連線逾時保護，避免卡死
   headers = {
       "User-Agent": (
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
       )
   }
+  REQUEST_TIMEOUT = 4  # 每個請求最多等 4 秒
 
   try:
     # 1. 首頁可用性
-    res = requests.get(BASE_URL, headers=headers, timeout=15)
+    res = requests.get(BASE_URL, headers=headers, timeout=6)
     if res.status_code != 200:
       results.append(
           (
@@ -59,7 +61,7 @@ def check_website():
 
     soup = BeautifulSoup(res.text, "html.parser")
 
-    # 2. 第一層 Link 檢查（抽樣 5 個項目）
+    # 2. 第一層 Link 檢查（嚴格限制只抽樣 5 個，快速完成）
     menu_links = []
     for a_tag in soup.find_all("a", href=True):
       href = a_tag["href"].strip()
@@ -84,7 +86,7 @@ def check_website():
     for link_url, link_text in menu_links[:5]:
       try:
         sub_res = requests.get(
-            link_url, headers=headers, timeout=5, allow_redirects=True
+            link_url, headers=headers, timeout=REQUEST_TIMEOUT, allow_redirects=True
         )
         if sub_res.status_code in [200, 301, 302, 307, 308]:
           link_items.append(f"✅ <b>{link_text}</b> (狀態: {sub_res.status_code})")
@@ -103,7 +105,7 @@ def check_website():
       results.append(("第一層 Link 導覽失效檢查", False, link_items))
       anomaly_count += 1
 
-    # 3. 最新公告頁面檢查（抽樣 5 篇）
+    # 3. 最新公告頁面檢查（嚴格限制抽樣 5 篇）
     news_links = []
     for a_tag in soup.find_all("a", href=True):
       href = a_tag["href"]
@@ -123,7 +125,7 @@ def check_website():
     if len(news_links) > 0:
       for n_url, n_title in news_links[:5]:
         try:
-          n_res = requests.get(n_url, headers=headers, timeout=6)
+          n_res = requests.get(n_url, headers=headers, timeout=REQUEST_TIMEOUT)
           if n_res.status_code == 200:
             news_items.append(f"✅ {n_title} <span class='tag'>載入正常</span>")
           else:
@@ -145,27 +147,25 @@ def check_website():
           ("最新公告頁面有效性", True, ["首頁未直接捕捉到公告清單結構"])
       )
 
-    # 4. 公告與重大政策附件下載驗證（雙軌機制：最新公告不足則自動去重大政策頁面補足 5 個）
+    # 4. 公告與重大政策附件下載驗證（效能優化：限制最多只檢索前 8 個候選頁面，湊滿 5 個即立刻中斷）
     att_items = []
     att_error_count = 0
+    candidate_urls = [n[0] for n in news_links[:8]]  # 限制只看前 8 篇
 
-    # 收集所有可能藏有附件的頁面清單（包含最新公告 + 重大政策/業務專區頁面）
-    target_pages = [n[0] for n in news_links]
-
-    # 自動尋找「重大政策」或類似的政策頁面連結加入備援清單
+    # 加入重大政策備援
     for a_tag in soup.find_all("a", href=True):
       text = a_tag.text.strip()
       href = a_tag["href"]
-      if any(keyword in text for keyword in ["重大政策", "政策", "專區", "業務"]):
+      if any(keyword in text for keyword in ["重大政策", "政策", "業務"]):
         p_url = BASE_URL.rstrip("/") + href if href.startswith("/") else href
-        if p_url not in target_pages and "forest.gov.tw" in p_url:
-          target_pages.append(p_url)
+        if p_url not in candidate_urls and "forest.gov.tw" in p_url:
+          candidate_urls.append(p_url)
 
     try:
-      for p_url in target_pages:
+      for p_url in candidate_urls:
         if len(att_items) >= 5:
-          break
-        p_res = requests.get(p_url, headers=headers, timeout=6)
+          break  # 湊滿 5 個立刻跳出，絕不拖延時間
+        p_res = requests.get(p_url, headers=headers, timeout=REQUEST_TIMEOUT)
         if p_res.status_code == 200:
           p_soup = BeautifulSoup(p_res.text, "html.parser")
           for file_a in p_soup.find_all("a", href=True):
@@ -181,20 +181,23 @@ def check_website():
               att_name = (
                   file_a.text.strip() or f"附件檔案({f_href.split('.')[-1]})"
               )
-              att_test = requests.head(att_url, headers=headers, timeout=5)
+              att_test = requests.head(
+                  att_url, headers=headers, timeout=REQUEST_TIMEOUT
+              )
 
               source_label = (
                   "公告" if "news" in p_url or "bulletin" in p_url else "重大政策/專區"
               )
               if att_test.status_code in [200, 301, 302]:
                 att_items.append(
-                    f"✅ <b>[{source_label}]</b> 📎 {att_name[:25]} (下載驗證有效)"
+                    f"✅ <b>[{source_label}]</b> 📎 {att_name[:22]} (驗證有效)"
                 )
               else:
                 att_items.append(
-                    f"❌ <b>[{source_label}]</b> 📎 {att_name[:25]} (連結異常)"
+                    f"❌ <b>[{source_label}]</b> 📎 {att_name[:22]} (連結異常)"
                 )
                 att_error_count += 1
+              break
     except Exception:
       pass
 
@@ -209,7 +212,7 @@ def check_website():
           (
               "公告與政策附件下載驗證",
               True,
-              ["經深度掃描公告與重大政策頁面，未檢出帶有檔案附件之項目"],
+              ["經快速掃描，未達 5 筆帶有檔案附件之項目"],
           )
       )
 
@@ -217,7 +220,7 @@ def check_website():
     search_keyword = "步道"
     search_url = f"{BASE_URL.rstrip('/')}/search?q={search_keyword}"
     try:
-      s_res = requests.get(search_url, headers=headers, timeout=8)
+      s_res = requests.get(search_url, headers=headers, timeout=REQUEST_TIMEOUT)
       if s_res.status_code == 200 and len(s_res.text) > 300:
         results.append(
             (
@@ -354,7 +357,7 @@ def check_website():
 
   with open("index.html", "w", encoding="utf-8") as f:
     f.write(html_content)
-  print("雙軌備援佐證報表 index.html 產生成功！")
+  print("極速優化版報表 index.html 產生成功！")
 
 
 if __name__ == "__main__":
