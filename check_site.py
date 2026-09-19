@@ -116,7 +116,7 @@ def check_website():
         full_url = (
             BASE_URL.rstrip("/") + href if href.startswith("/") else href
         )
-        if full_url not in [n[0] for n in ]:
+        if full_url not in [n[0] for n in news_links]:
           news_links.append((full_url, text))
 
     news_details = []
