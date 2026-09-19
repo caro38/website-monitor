@@ -1,10 +1,14 @@
 import datetime
+import random
 import requests
 from bs4 import BeautifulSoup
 
 BASE_URL = "https://www.forest.gov.tw/"
-# 明確指定已知含有豐富附件的目標頁面作為主要檢核庫
-TARGET_PLAN_URL = "https://www.forest.gov.tw/plan"
+TARGET_PAGES = [
+    BASE_URL,
+    "https://www.forest.gov.tw/plan",
+    "https://www.forest.gov.tw/all-news",
+]
 
 
 def check_website():
@@ -18,8 +22,7 @@ def check_website():
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
       )
   }
-  # 將逾時時間放寬至 10 秒，避免伺服器稍慢就發生 Read timed out
-  REQUEST_TIMEOUT = 10
+  REQUEST_TIMEOUT = 8
 
   try:
     # 1. 首頁可用性
@@ -63,11 +66,14 @@ def check_website():
 
     soup = BeautifulSoup(res.text, "html.parser")
 
-    # 2. 第一層 Link 檢查（抽樣 5 個項目）
-    menu_links = []
+    # ==========================================
+    # 2. 第一層 Link 導覽失效檢查：隨機抽檢 20 組欄位 Link
+    # ==========================================
+    all_menu_links = []
     for a_tag in soup.find_all("a", href=True):
       href = a_tag["href"].strip()
       text = a_tag.text.strip()
+      # 過濾無效連結與外部網站，確保是站內有效導覽
       if (
           href
           and not href.startswith(("#", "javascript:", "tel:", "mailto:"))
@@ -79,36 +85,67 @@ def check_website():
           full_url = href
         else:
           continue
+
         clean_url = full_url.split("#")[0]
-        if clean_url != BASE_URL and (clean_url, text[:15]) not in menu_links:
-          menu_links.append((clean_url, text[:15]))
+        # 排除首頁自身與重複項目
+        if clean_url != BASE_URL:
+          item = (clean_url, text[:16])
+          if item not in all_menu_links:
+            all_menu_links.append(item)
+
+    # 隨機洗牌並抽取 20 組
+    random.shuffle(all_menu_links)
+    sampled_menus = all_menu_links[:20]
 
     link_items = []
     link_broken = 0
-    for link_url, link_text in menu_links[:5]:
-      try:
-        sub_res = requests.get(
-            link_url,
-            headers=headers,
-            timeout=REQUEST_TIMEOUT,
-            allow_redirects=True,
-        )
-        if sub_res.status_code in [200, 301, 302, 307, 308]:
-          link_items.append(f"✅ <b>{link_text}</b> (狀態: {sub_res.status_code})")
-        else:
-          link_items.append(
-              f"❌ <b>{link_text}</b> (異常代碼: {sub_res.status_code})"
+    if sampled_menus:
+      for link_url, link_text in sampled_menus:
+        try:
+          sub_res = requests.get(
+              link_url,
+              headers=headers,
+              timeout=REQUEST_TIMEOUT,
+              allow_redirects=True,
           )
+          if sub_res.status_code in [200, 301, 302, 307, 308]:
+            link_items.append(
+                f"🎲 <b>{link_text}</b> (狀態: {sub_res.status_code})"
+            )
+          else:
+            link_items.append(
+                f"❌ <b>{link_text}</b> (異常代碼: {sub_res.status_code})"
+            )
+            link_broken += 1
+        except Exception:
+          link_items.append(f"❌ <b>{link_text}</b> (連線逾時/失效)")
           link_broken += 1
-      except Exception:
-        link_items.append(f"❌ <b>{link_text}</b> (連線逾時/失效)")
-        link_broken += 1
 
-    if link_broken == 0 and len(link_items) > 0:
-      results.append(("第一層 Link 導覽失效檢查", True, link_items))
+      if link_broken == 0:
+        results.append(
+            (
+                "第一層 Link 隨機抽檢 (共 20 組)",
+                True,
+                link_items,
+            )
+        )
+      else:
+        results.append(
+            (
+                "第一層 Link 隨機抽檢 (共 20 組)",
+                False,
+                link_items,
+            )
+        )
+        anomaly_count += 1
     else:
-      results.append(("第一層 Link 導覽失效檢查", False, link_items))
-      anomaly_count += 1
+      results.append(
+          (
+              "第一層 Link 隨機抽檢 (共 20 組)",
+              True,
+              ["未在首頁捕捉到足夠的導覽 Link"],
+          )
+      )
 
     # 3. 最新公告頁面檢查（抽樣 5 篇）
     news_links = []
@@ -152,28 +189,15 @@ def check_website():
           ("最新公告頁面有效性", True, ["首頁未直接捕捉到公告清單結構"])
       )
 
-    # 4. 定向附件下載驗證：優先直接掃描包含豐富附件的 /plan 頁面，確保穩定湊滿 5 個
-    att_items = []
-    att_error_count = 0
-    pages_to_scan = [TARGET_PLAN_URL]
-
-    # 同時也把首頁抓到的最新公告當作輔助候選
-    for n_url, _ in news_links[:5]:
-      if n_url not in pages_to_scan:
-        pages_to_scan.append(n_url)
-
-    try:
-      for p_url in pages_to_scan:
-        if len(att_items) >= 5:
-          break
-        p_res = requests.get(p_url, headers=headers, timeout=REQUEST_TIMEOUT)
+    # 4. 每日動態隨機附件下載驗證（抽樣 5 個）
+    all_found_attachments = []
+    for target_p in TARGET_PAGES:
+      try:
+        p_res = requests.get(target_p, headers=headers, timeout=REQUEST_TIMEOUT)
         if p_res.status_code == 200:
           p_soup = BeautifulSoup(p_res.text, "html.parser")
           for file_a in p_soup.find_all("a", href=True):
-            if len(att_items) >= 5:
-              break
             f_href = file_a["href"].lower()
-            # 支援常見的檔案副檔名
             if any(
                 ext in f_href
                 for ext in [".pdf", ".odf", ".doc", ".docx", ".odt", ".ods"]
@@ -186,39 +210,55 @@ def check_website():
               att_name = (
                   file_a.text.strip() or f"附件檔案({f_href.split('.')[-1]})"
               )
+              item_tuple = (att_url, att_name, target_p)
+              if item_tuple not in all_found_attachments:
+                all_found_attachments.append(item_tuple)
+      except Exception:
+        continue
 
-              # 實際發送 HEAD 請求驗證下載連結
-              att_test = requests.head(
-                  att_url, headers=headers, timeout=REQUEST_TIMEOUT
-              )
+    random.shuffle(all_found_attachments)
+    sampled_attachments = all_found_attachments[:5]
 
-              source_label = (
-                  "重大政策/計畫專區" if "plan" in p_url else "最新公告"
-              )
-              if att_test.status_code in [200, 301, 302]:
-                att_items.append(
-                    f"✅ <b>[{source_label}]</b> 📎 {att_name[:25]} (下載驗證有效)"
-                )
-              else:
-                att_items.append(
-                    f"❌ <b>[{source_label}]</b> 📎 {att_name[:25]} (連結異常:{att_test.status_code})"
-                )
-                att_error_count += 1
-    except Exception as e:
-      att_items.append(f"⚠️ 附件掃描過程發生例外: {str(e)}")
+    att_items = []
+    att_error_count = 0
 
-    if att_items:
+    if sampled_attachments:
+      for att_url, att_name, source_page in sampled_attachments:
+        try:
+          att_test = requests.head(
+              att_url, headers=headers, timeout=REQUEST_TIMEOUT
+          )
+          source_short = (
+              "首頁"
+              if source_page == BASE_URL
+              else ("計畫專區" if "plan" in source_page else "公告/其他")
+          )
+          if att_test.status_code in [200, 301, 302]:
+            att_items.append(
+                f"🎲 <b>[{source_short}]</b> 📎 {att_name[:22]} (隨機抽驗：有效)"
+            )
+          else:
+            att_items.append(
+                f"❌ <b>[{source_short}]</b> 📎 {att_name[:22]} (抽驗異常:{att_test.status_code})"
+            )
+            att_error_count += 1
+        except Exception:
+          att_items.append(
+              f"❌ <b>[隨機抽驗]</b> 📎 {att_name[:22]} (連線逾時)"
+          )
+          att_error_count += 1
+
       if att_error_count == 0:
-        results.append(("重大政策與公告附件下載驗證", True, att_items))
+        results.append(("每日動態隨機附件下載驗證", True, att_items))
       else:
-        results.append(("重大政策與公告附件下載驗證", False, att_items))
+        results.append(("每日動態隨機附件下載驗證", False, att_items))
         anomaly_count += 1
     else:
       results.append(
           (
-              "重大政策與公告附件下載驗證",
+              "每日動態隨機附件下載驗證",
               True,
-              ["經定向掃描 /plan 頁面，未檢出符合條件之附件"],
+              ["目前站點未檢出可供隨機抽驗之附件檔案"],
           )
       )
 
@@ -318,8 +358,8 @@ def check_website():
         .card-title {{ font-weight: bold; font-size: 16px; color: #2d3748; }}
         .badge {{ color: white; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }}
         
-        .card-body {{ display: flex; flex-direction: column; gap: 8px; }}
-        .card-row {{ font-size: 13px; color: #4a5568; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border-left: 3px solid #cbd5e0; line-height: 1.5; }}
+        .card-body {{ display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 4px; }}
+        .card-row {{ font-size: 12px; color: #4a5568; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border-left: 3px solid #3182ce; line-height: 1.4; }}
         .card-row code {{ background: #edf2f7; padding: 2px 6px; border-radius: 4px; color: #e53e3e; font-family: monospace; }}
         .tag {{ background: #e2e8f0; color: #4a5568; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-left: 6px; }}
         .tag-err {{ background: #fed7d7; color: #c53030; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-left: 6px; }}
@@ -333,6 +373,7 @@ def check_website():
             .wrapper {{ box-shadow: none; padding: 0; max-width: 100%; }}
             .print-btn {{ display: none; }}
             .card {{ break-inside: avoid; border: 1px solid #cbd5e0; }}
+            .card-body {{ max-height: none; overflow: visible; }}
         }}
     </style>
 </head>
@@ -340,7 +381,7 @@ def check_website():
     <div class="wrapper">
         <div class="header">
             <div class="header-left">
-                <h2>🏛️ 機關網站核心功能每日檢核暨佐證報表</h2>
+                <h2>🏛️ 機關網站核心功能每日檢核暨動態佐證報表</h2>
                 <p>監控目標：<a href="{BASE_URL}" target="_blank" style="color: #3182ce; text-decoration: none;">{BASE_URL}</a></p>
             </div>
             <div>
@@ -363,7 +404,7 @@ def check_website():
 
   with open("index.html", "w", encoding="utf-8") as f:
     f.write(html_content)
-  print("定向優化版報表 index.html 產生成功！")
+  print("20組隨機抽檢報表 index.html 產生成功！")
 
 
 if __name__ == "__main__":
