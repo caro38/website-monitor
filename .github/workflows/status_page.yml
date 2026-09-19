@@ -1,0 +1,36 @@
+name: Update Status Page
+
+on:
+  schedule:
+    # 每天早上 8 點自動執行 (UTC 0點)
+    - cron: '0 0 * * *'
+  # 允許隨時在網頁上手動按按鈕執行
+  workflow_dispatch:
+
+# 賦予寫入權限，讓腳本能自動更新 index.html
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run check script
+        run: python check_site.py
+
+      - name: Commit and push changes to repository
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'Auto-update website status page'
+          file_pattern: index.html
