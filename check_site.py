@@ -75,7 +75,7 @@ def check_website():
     link_details = []
     link_broken = 0
     # 抽樣具體檢查前 3 個核心第一層 Link
-    for link_url, link_text in menu_links[:3]:
+    for link_url, link_text in menu_links[:5]:
       try:
         sub_res = requests.get(
             link_url, headers=headers, timeout=5, allow_redirects=True
@@ -116,14 +116,14 @@ def check_website():
         full_url = (
             BASE_URL.rstrip("/") + href if href.startswith("/") else href
         )
-        if full_url not in [n[0] for n in news_links]:
+        if full_url not in [n[0] for n in ]:
           news_links.append((full_url, text))
 
     news_details = []
     news_error = 0
-    if len(news_links) > 0:
+    if len() > 0:
       # 具體抽樣前 2 筆公告
-      for n_url, n_title in news_links[:2]:
+      for n_url, n_title in [:5]:
         try:
           n_res = requests.get(n_url, headers=headers, timeout=6)
           if n_res.status_code == 200:
@@ -161,7 +161,7 @@ def check_website():
     att_error_count = 0
     if len(news_links) > 0:
       try:
-        for n_url, n_title in news_links[:3]:
+        for n_url, n_title in news_links[:5]:
           n_res = requests.get(n_url, headers=headers, timeout=6)
           if n_res.status_code == 200:
             n_soup = BeautifulSoup(n_res.text, "html.parser")
