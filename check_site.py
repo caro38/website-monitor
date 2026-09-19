@@ -52,7 +52,7 @@ def check_website():
 
     soup = BeautifulSoup(res.text, "html.parser")
 
-    # 2. 第一層 Link 檢查（具體列出項目與名稱佐證）
+    # 2. 第一層 Link 檢查（具體抽樣檢查 5 個項目）
     menu_links = []
     for a_tag in soup.find_all("a", href=True):
       href = a_tag["href"].strip()
@@ -74,7 +74,7 @@ def check_website():
 
     link_details = []
     link_broken = 0
-    # 抽樣具體檢查前 3 個核心第一層 Link
+    # 抽樣具體檢查前 5 個核心第一層 Link
     for link_url, link_text in menu_links[:5]:
       try:
         sub_res = requests.get(
@@ -94,7 +94,7 @@ def check_website():
         link_broken += 1
 
     link_desc = (
-        "<b>具體抽樣導覽連結佐證：</b><br>" + "<br>".join(link_details)
+        "<b>具體抽樣 5 個導覽連結佐證：</b><br>" + "<br>".join(link_details)
         if link_details
         else "未捕捉到有效導覽連結"
     )
@@ -104,7 +104,7 @@ def check_website():
       results.append(("第一層 Link 導覽失效檢查", False, link_desc))
       anomaly_count += 1
 
-    # 3. 最新公告頁面檢查（具體列出公告標題佐證）
+    # 3. 最新公告頁面檢查（具體抽樣檢查 5 筆公告）
     news_links = []
     for a_tag in soup.find_all("a", href=True):
       href = a_tag["href"]
@@ -121,25 +121,25 @@ def check_website():
 
     news_details = []
     news_error = 0
-    if len() > 0:
-      # 具體抽樣前 2 筆公告
+    if len(news_links) > 0:
+      # 具體抽樣前 5 筆公告
       for n_url, n_title in news_links[:5]:
         try:
           n_res = requests.get(n_url, headers=headers, timeout=6)
           if n_res.status_code == 200:
             news_details.append(
-                f"✅ <b>{n_title[:18]}...</b> (公告頁面正常載入)"
+                f"✅ <b>{n_title[:16]}...</b> (公告頁面正常載入)"
             )
           else:
             news_details.append(
-                f"❌ <b>{n_title[:18]}...</b> (回應異常: {n_res.status_code})"
+                f"❌ <b>{n_title[:16]}...</b> (回應異常: {n_res.status_code})"
             )
             news_error += 1
         except Exception:
-          news_details.append(f"❌ <b>{n_title[:18]}...</b> (頁面連線逾時)")
+          news_details.append(f"❌ <b>{n_title[:16]}...</b> (頁面連線逾時)")
           news_error += 1
 
-      news_desc = "<b>具體抽樣公告頁面佐證：</b><br>" + "<br>".join(
+      news_desc = "<b>具體抽樣 5 筆公告頁面佐證：</b><br>" + "<br>".join(
           news_details
       )
       if news_error == 0:
@@ -156,7 +156,7 @@ def check_website():
           )
       )
 
-    # 4. 公告附件下載驗證（具體列出找到的檔案與驗證狀態）
+    # 4. 公告附件下載驗證（掃描前 5 筆公告中的附件）
     att_found_list = []
     att_error_count = 0
     if len(news_links) > 0:
@@ -179,22 +179,20 @@ def check_website():
                 att_test = requests.head(att_url, headers=headers, timeout=5)
                 if att_test.status_code in [200, 301, 302]:
                   att_found_list.append(
-                      f"✅ <b>{att_name[:15]}</b> (下載驗證有效)"
+                      f"✅ <b>{att_name[:12]}</b> (下載驗證有效)"
                   )
                 else:
                   att_found_list.append(
-                      f"❌ <b>{att_name[:15]}</b> (下載連結異常: {att_test.status_code})"
+                      f"❌ <b>{att_name[:12]}</b> (下載連結異常: {att_test.status_code})"
                   )
                   att_error_count += 1
                 break
-          if len(att_found_list) > 0:
-            break
       except Exception:
         pass
 
     if att_found_list:
       att_desc = (
-          "<b>具體公告附件下載驗證佐證：</b><br>"
+          "<b>近期 5 筆公告附件下載驗證佐證：</b><br>"
           + "<br>".join(att_found_list)
       )
       if att_error_count == 0:
@@ -208,13 +206,13 @@ def check_website():
               "最新公告附件下載驗證",
               True,
               (
-                  "<b>近期抽樣公告佐證：</b><br>經掃描近期公告頁面，未直接檢出帶有"
-                  " PDF/ODF 下載附件"
+                  "<b>近期 5 筆公告掃描佐證：</b><br>經掃描近期 5"
+                  " 筆公告頁面，未直接檢出帶有 PDF/ODF 下載附件"
               ),
           )
       )
 
-    # 5. 站內搜尋功能驗證（具體列出測試關鍵字與檢索狀況）
+    # 5. 站內搜尋功能驗證
     search_keyword = "步道"
     search_url = f"{BASE_URL.rstrip('/')}/search?q={search_keyword}"
     try:
@@ -268,7 +266,6 @@ def check_website():
       datetime.datetime.utcnow() + datetime.timedelta(hours=8)
   ).strftime("%Y-%m-%d %H:%M:%S")
 
-  # 產生明細化卡片 HTML
   cards_html = ""
   for title, is_success, desc in results:
     bg_color = "#27ae60" if is_success else "#c0392b"
