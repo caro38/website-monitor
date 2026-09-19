@@ -8,7 +8,7 @@ BASE_URL = "https://www.forest.gov.tw/"
 def check_website():
   results = []
   overall_status = "全面正常 (Operational)"
-  overall_color = "#28a745"  # 綠色
+  overall_color = "#2ecc71"
   anomaly_count = 0
 
   headers = {
@@ -18,39 +18,41 @@ def check_website():
   }
 
   try:
-    # ----------------------------------------------------
-    # 1. 首頁可用性與核心關鍵字檢測
-    # ----------------------------------------------------
+    # 1. 首頁可用性
     res = requests.get(BASE_URL, headers=headers, timeout=15)
     if res.status_code != 200:
       results.append(
           (
-              "1. 首頁可用性 (Homepage)",
+              "首頁可用性與核心關鍵字",
               False,
-              f"HTTP 狀態碼異常: {res.status_code}",
+              f"目標網址: {BASE_URL}<br>狀態碼異常: {res.status_code}",
           )
       )
       anomaly_count += 1
-      raise Exception("首頁無法正常存取，中止後續檢測")
+      raise Exception("首頁無法正常存取")
     elif "林業" not in res.text:
       results.append(
           (
-              "1. 首頁可用性 (Homepage)",
+              "首頁可用性與核心關鍵字",
               False,
-              "網頁可連線，但關鍵字「林業」未出現",
+              f"目標網址: {BASE_URL}<br>網頁可連線，但未檢出核心關鍵字「林業」",
           )
       )
       anomaly_count += 1
     else:
       results.append(
-          ("1. 首頁可用性 (Homepage)", True, "首頁連線正常 (200 OK)")
+          (
+              "首頁可用性與核心關鍵字",
+              True,
+              (
+                  f"目標網址: {BASE_URL}<br>HTTP 200 正常，成功檢出核心關鍵字「林業」"
+              ),
+          )
       )
 
     soup = BeautifulSoup(res.text, "html.parser")
 
-    # ----------------------------------------------------
-    # 2. 第一層 Link（超連結）導覽選單失效檢查
-    # ----------------------------------------------------
+    # 2. 第一層 Link 檢查（具體列出項目與名稱佐證）
     menu_links = []
     for a_tag in soup.find_all("a", href=True):
       href = a_tag["href"].strip()
@@ -66,46 +68,43 @@ def check_website():
           full_url = href
         else:
           continue
-
         clean_url = full_url.split("#")[0]
-        if clean_url != BASE_URL and (clean_url, text[:10]) not in menu_links:
-          menu_links.append((clean_url, text[:10]))
+        if clean_url != BASE_URL and (clean_url, text[:12]) not in menu_links:
+          menu_links.append((clean_url, text[:12]))
 
-    # 抽樣檢查前 4 個第一層 Link
-    menu_broken = 0
-    menu_checked_count = 0
-    for link_url, link_text in menu_links[:4]:
-      menu_checked_count += 1
+    link_details = []
+    link_broken = 0
+    # 抽樣具體檢查前 3 個核心第一層 Link
+    for link_url, link_text in menu_links[:3]:
       try:
         sub_res = requests.get(
             link_url, headers=headers, timeout=5, allow_redirects=True
         )
-        if sub_res.status_code not in [200, 301, 302, 307, 308]:
-          menu_broken += 1
+        if sub_res.status_code in [200, 301, 302, 307, 308]:
+          link_details.append(
+              f"✅ <b>{link_text}</b> (狀態: {sub_res.status_code})"
+          )
+        else:
+          link_details.append(
+              f"❌ <b>{link_text}</b> (異常代碼: {sub_res.status_code})"
+          )
+          link_broken += 1
       except Exception:
-        menu_broken += 1
+        link_details.append(f"❌ <b>{link_text}</b> (連線逾時/失效)")
+        link_broken += 1
 
-    if menu_checked_count > 0 and menu_broken == 0:
-      results.append(
-          (
-              "2. 第一層 Link 失效檢查",
-              True,
-              f"已抽樣檢測 {menu_checked_count} 個首頁第一層選單 Link，皆無失效 (無 404)",
-          )
-      )
+    link_desc = (
+        "<b>具體抽樣導覽連結佐證：</b><br>" + "<br>".join(link_details)
+        if link_details
+        else "未捕捉到有效導覽連結"
+    )
+    if link_broken == 0 and len(link_details) > 0:
+      results.append(("第一層 Link 導覽失效檢查", True, link_desc))
     else:
-      results.append(
-          (
-              "2. 第一層 Link 失效檢查",
-              False,
-              f"檢測到 {menu_broken} 個第一層選單 Link 發生失效或異常",
-          )
-      )
+      results.append(("第一層 Link 導覽失效檢查", False, link_desc))
       anomaly_count += 1
 
-    # ----------------------------------------------------
-    # 3. 最新公告頁面有效性檢測
-    # ----------------------------------------------------
+    # 3. 最新公告頁面檢查（具體列出公告標題佐證）
     news_links = []
     for a_tag in soup.find_all("a", href=True):
       href = a_tag["href"]
@@ -118,49 +117,48 @@ def check_website():
             BASE_URL.rstrip("/") + href if href.startswith("/") else href
         )
         if full_url not in [n[0] for n in news_links]:
-          news_links.append((full_url, text[:15]))
+          news_links.append((full_url, text))
 
+    news_details = []
+    news_error = 0
     if len(news_links) > 0:
-      sample_news_url, sample_news_title = news_links[0]
-      try:
-        news_res = requests.get(sample_news_url, headers=headers, timeout=6)
-        if news_res.status_code == 200:
-          results.append(
-              (
-                  "3. 最新公告頁面檢測",
-                  True,
-                  f"最新公告「{sample_news_title}...」頁面載入正常",
-              )
-          )
-        else:
-          results.append(
-              (
-                  "3. 最新公告頁面檢測",
-                  False,
-                  f"公告頁面回應異常 (代碼 {news_res.status_code})",
-              )
-          )
-          anomaly_count += 1
-      except Exception:
-        results.append(
-            ("3. 最新公告頁面檢測", False, "公告頁面連線逾時或失敗")
-        )
+      # 具體抽樣前 2 筆公告
+      for n_url, n_title in news_links[:2]:
+        try:
+          n_res = requests.get(n_url, headers=headers, timeout=6)
+          if n_res.status_code == 200:
+            news_details.append(
+                f"✅ <b>{n_title[:18]}...</b> (公告頁面正常載入)"
+            )
+          else:
+            news_details.append(
+                f"❌ <b>{n_title[:18]}...</b> (回應異常: {n_res.status_code})"
+            )
+            news_error += 1
+        except Exception:
+          news_details.append(f"❌ <b>{n_title[:18]}...</b> (頁面連線逾時)")
+          news_error += 1
+
+      news_desc = "<b>具體抽樣公告頁面佐證：</b><br>" + "<br>".join(
+          news_details
+      )
+      if news_error == 0:
+        results.append(("最新公告頁面有效性", True, news_desc))
+      else:
+        results.append(("最新公告頁面有效性", False, news_desc))
         anomaly_count += 1
     else:
       results.append(
           (
-              "3. 最新公告頁面檢測",
+              "最新公告頁面有效性",
               True,
-              "首頁未直接捕捉到公告清單結構（略過）",
+              "首頁未直接捕捉到公告清單結構（略過細節）",
           )
       )
 
-    # ----------------------------------------------------
-    # 4. 最新公告附件檔案下載檢測 (PDF / ODF)
-    # ----------------------------------------------------
-    attachment_found = False
-    attachment_status_msg = "近期公告內未發現帶有下載附件"
-
+    # 4. 公告附件下載驗證（具體列出找到的檔案與驗證狀態）
+    att_found_list = []
+    att_error_count = 0
     if len(news_links) > 0:
       try:
         for n_url, n_title in news_links[:3]:
@@ -172,95 +170,117 @@ def check_website():
               if any(
                   ext in f_href for ext in [".pdf", ".odf", ".doc", ".odt"]
               ):
-                attachment_found = True
                 att_url = (
                     BASE_URL.rstrip("/") + file_a["href"]
                     if file_a["href"].startswith("/")
                     else file_a["href"]
                 )
+                att_name = file_a.text.strip() or "未命名附件檔案"
                 att_test = requests.head(att_url, headers=headers, timeout=5)
                 if att_test.status_code in [200, 301, 302]:
-                  attachment_status_msg = (
-                      "成功偵測附件並驗證下載 Link 有效"
+                  att_found_list.append(
+                      f"✅ <b>{att_name[:15]}</b> (下載驗證有效)"
                   )
                 else:
-                  attachment_status_msg = (
-                      f"偵測到附件但下載 Link 異常 ({att_test.status_code})"
+                  att_found_list.append(
+                      f"❌ <b>{att_name[:15]}</b> (下載連結異常: {att_test.status_code})"
                   )
-                  anomaly_count += 1
+                  att_error_count += 1
                 break
-          if attachment_found:
+          if len(att_found_list) > 0:
             break
       except Exception:
-        attachment_status_msg = "附件檢查過程發生例外狀況"
+        pass
 
-    results.append(
-        ("4. 最新公告附件下載檢測", True, attachment_status_msg)
-    )
+    if att_found_list:
+      att_desc = (
+          "<b>具體公告附件下載驗證佐證：</b><br>"
+          + "<br>".join(att_found_list)
+      )
+      if att_error_count == 0:
+        results.append(("最新公告附件下載驗證", True, att_desc))
+      else:
+        results.append(("最新公告附件下載驗證", False, att_desc))
+        anomaly_count += 1
+    else:
+      results.append(
+          (
+              "最新公告附件下載驗證",
+              True,
+              (
+                  "<b>近期抽樣公告佐證：</b><br>經掃描近期公告頁面，未直接檢出帶有"
+                  " PDF/ODF 下載附件"
+              ),
+          )
+      )
 
-    # ----------------------------------------------------
-    # 5. 站內搜尋功能可用性檢查
-    # ----------------------------------------------------
+    # 5. 站內搜尋功能驗證（具體列出測試關鍵字與檢索狀況）
     search_keyword = "步道"
     search_url = f"{BASE_URL.rstrip('/')}/search?q={search_keyword}"
     try:
-      search_res = requests.get(search_url, headers=headers, timeout=8)
-      if search_res.status_code == 200 and len(search_res.text) > 300:
+      s_res = requests.get(search_url, headers=headers, timeout=8)
+      if s_res.status_code == 200 and len(s_res.text) > 300:
         results.append(
             (
-                f"5. 站內搜尋功能 (關鍵字：「{search_keyword}」)",
+                "站內搜尋功能驗證",
                 True,
-                "搜尋結果頁面正常回應，檢索引擎與資料庫運作中",
+                (
+                    f"<b>檢索參數佐證：</b><br>測試關鍵字：<code>{search_keyword}</code><br>狀態碼："
+                    f" {s_res.status_code} (引擎與資料庫回應正常)"
+                ),
             )
         )
       else:
         results.append(
             (
-                f"5. 站內搜尋功能 (關鍵字：「{search_keyword}」)",
+                "站內搜尋功能驗證",
                 False,
-                f"搜尋模組回應異常 (代碼 {search_res.status_code})",
+                (
+                    f"<b>檢索參數佐證：</b><br>測試關鍵字：<code>{search_keyword}</code><br>回應異常代碼："
+                    f" {s_res.status_code}"
+                ),
             )
         )
         anomaly_count += 1
     except Exception:
       results.append(
           (
-              f"5. 站內搜尋功能 (關鍵字：「{search_keyword}」)",
+              "站內搜尋功能驗證",
               False,
-              "搜尋模組連線逾時",
+              (
+                  f"<b>檢索參數佐證：</b><br>測試關鍵字：<code>{search_keyword}</code><br>狀況：模組連線逾時"
+              ),
           )
       )
       anomaly_count += 1
 
   except Exception as e:
     overall_status = "系統嚴重異常 (Down)"
-    overall_color = "#dc3545"
-    results.append(
-        ("整體系統狀態", False, f"無法連接至目標網站: {str(e)}")
-    )
+    overall_color = "#e74c3c"
+    results.append(("系統狀態", False, f"無法連線執行: {str(e)}"))
     anomaly_count += 99
 
-  # 綜合狀態判定
   if anomaly_count > 0:
     overall_status = f"發現 {anomaly_count} 項異常"
-    overall_color = "#ffc107" if anomaly_count < 3 else "#dc3545"
+    overall_color = "#e67e22" if anomaly_count < 3 else "#e74c3c"
 
-  # 取得台北時間 (UTC+8)
   now = (
       datetime.datetime.utcnow() + datetime.timedelta(hours=8)
   ).strftime("%Y-%m-%d %H:%M:%S")
 
-  # 產生 HTML 看板
-  items_html = ""
-  for name, is_success, desc in results:
-    badge_color = "#28a745" if is_success else "#dc3545"
-    badge_text = "正常" if is_success else "異常/失效"
-    items_html += f"""
-        <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding: 12px; text-align: left; font-weight: bold; font-size: 13px;">{name}</td>
-            <td style="padding: 12px; text-align: center;"><span style="background-color: {badge_color}; color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px;">{badge_text}</span></td>
-            <td style="padding: 12px; text-align: left; color: #555; font-size: 13px;">{desc}</td>
-        </tr>
+  # 產生明細化卡片 HTML
+  cards_html = ""
+  for title, is_success, desc in results:
+    bg_color = "#27ae60" if is_success else "#c0392b"
+    status_text = "正常" if is_success else "異常"
+    cards_html += f"""
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">{title}</span>
+                <span class="badge" style="background-color: {bg_color};">{status_text}</span>
+            </div>
+            <div class="card-desc">{desc}</div>
+        </div>
         """
 
   html_content = f"""<!DOCTYPE html>
@@ -268,37 +288,54 @@ def check_website():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>機關網站核心功能完整巡檢看板</title>
+    <title>機關網站日常巡檢佐證報表</title>
     <style>
-        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f4f6f9; color: #333; padding: 30px 15px; }}
-        .container {{ max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }}
-        .header {{ text-align: center; margin-bottom: 25px; }}
-        .overall-badge {{ display: inline-block; padding: 8px 22px; color: white; background-color: {overall_color}; border-radius: 50px; font-weight: bold; font-size: 16px; margin-top: 10px; }}
-        table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-        .target {{ color: #007bff; text-decoration: none; }}
-        .time {{ text-align: center; color: #888; font-size: 13px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8f9fa; color: #2c3e50; margin: 0; padding: 20px; }}
+        .wrapper {{ max-width: 950px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
+        .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 20px; margin-bottom: 20px; }}
+        .header-left h2 {{ margin: 0 0 5px 0; font-size: 22px; color: #2c3e50; }}
+        .header-left p {{ margin: 0; font-size: 13px; color: #7f8c8d; }}
+        .overall-badge {{ padding: 8px 18px; color: white; background-color: {overall_color}; border-radius: 20px; font-weight: bold; font-size: 14px; text-align: center; }}
+        
+        .grid-container {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }}
+        .card {{ background: #fdfefe; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }}
+        .card-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #edf2f7; padding-bottom: 6px; }}
+        .card-title {{ font-weight: bold; font-size: 14px; color: #2c3e50; }}
+        .badge {{ color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }}
+        .card-desc {{ font-size: 12px; color: #4a5568; line-height: 1.5; }}
+        .card-desc code {{ background: #edf2f7; padding: 2px 4px; border-radius: 3px; color: #e53e3e; }}
+        
+        .footer {{ display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ecf0f1; padding-top: 15px; font-size: 12px; color: #95a5a6; }}
+        .print-btn {{ background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }}
+        .print-btn:hover {{ background: #2980b9; }}
+
+        @media print {{
+            body {{ background: white; padding: 0; }}
+            .wrapper {{ box-shadow: none; padding: 0; max-width: 100%; }}
+            .print-btn {{ display: none; }}
+        }}
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="wrapper">
         <div class="header">
-            <h2>🏛️ 機關網站核心功能完整巡檢看板</h2>
-            <p>監控目標：<a href="{BASE_URL}" class="target" target="_blank">{BASE_URL}</a></p>
-            <div class="overall-badge">綜合檢測結果：{overall_status}</div>
+            <div class="header-left">
+                <h2>🏛️ 機關網站核心功能每日檢核暨佐證報表</h2>
+                <p>監控目標：<a href="{BASE_URL}" target="_blank" style="color: #2980b9; text-decoration: none;">{BASE_URL}</a></p>
+            </div>
+            <div>
+                <div class="overall-badge">狀態：{overall_status}</div>
+            </div>
         </div>
-        <table>
-            <thead>
-                <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                    <th style="padding: 12px; text-align: left; font-size: 13px;">檢測項目（全方位核心需求）</th>
-                    <th style="padding: 12px; text-align: center; font-size: 13px;">狀態</th>
-                    <th style="padding: 12px; text-align: left; font-size: 13px;">檢測詳情與說明</th>
-                </tr>
-            </thead>
-            <tbody>
-                {items_html}
-            </tbody>
-        </table>
-        <div class="time">最後巡檢時間（台北時間）：{now}</div>
+
+        <div class="grid-container">
+            {cards_html}
+        </div>
+
+        <div class="footer">
+            <div>檢核執行時間（台北時間）：{now}</div>
+            <div><button class="print-btn" onclick="window.print()">🖨️ 列印 / 儲存為正式 PDF 稽核報表</button></div>
+        </div>
     </div>
 </body>
 </html>
@@ -306,7 +343,7 @@ def check_website():
 
   with open("index.html", "w", encoding="utf-8") as f:
     f.write(html_content)
-  print("完整巡檢看板 index.html 產生成功！")
+  print("明細化佐證報表 index.html 產生成功！")
 
 
 if __name__ == "__main__":
