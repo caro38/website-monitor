@@ -123,7 +123,7 @@ def check_website():
     news_error = 0
     if len() > 0:
       # 具體抽樣前 2 筆公告
-      for n_url, n_title in [:5]:
+      for n_url, n_title in news_links[:5]:
         try:
           n_res = requests.get(n_url, headers=headers, timeout=6)
           if n_res.status_code == 200:
