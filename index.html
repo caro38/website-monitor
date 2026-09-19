@@ -18,8 +18,8 @@
         .card-title { font-weight: bold; font-size: 16px; color: #2d3748; }
         .badge { color: white; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
         
-        .card-body { display: flex; flex-direction: column; gap: 8px; }
-        .card-row { font-size: 13px; color: #4a5568; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border-left: 3px solid #cbd5e0; line-height: 1.5; }
+        .card-body { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 4px; }
+        .card-row { font-size: 12px; color: #4a5568; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border-left: 3px solid #3182ce; line-height: 1.4; }
         .card-row code { background: #edf2f7; padding: 2px 6px; border-radius: 4px; color: #e53e3e; font-family: monospace; }
         .tag { background: #e2e8f0; color: #4a5568; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-left: 6px; }
         .tag-err { background: #fed7d7; color: #c53030; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-left: 6px; }
@@ -33,6 +33,7 @@
             .wrapper { box-shadow: none; padding: 0; max-width: 100%; }
             .print-btn { display: none; }
             .card { break-inside: avoid; border: 1px solid #cbd5e0; }
+            .card-body { max-height: none; overflow: visible; }
         }
     </style>
 </head>
@@ -40,7 +41,7 @@
     <div class="wrapper">
         <div class="header">
             <div class="header-left">
-                <h2>🏛️ 機關網站核心功能每日檢核暨佐證報表</h2>
+                <h2>🏛️ 機關網站核心功能每日檢核暨動態佐證報表</h2>
                 <p>監控目標：<a href="https://www.forest.gov.tw/" target="_blank" style="color: #3182ce; text-decoration: none;">https://www.forest.gov.tw/</a></p>
             </div>
             <div>
@@ -62,11 +63,11 @@
         
         <div class="card">
             <div class="card-header">
-                <span class="card-title">第一層 Link 導覽失效檢查</span>
+                <span class="card-title">第一層 Link 隨機抽檢 (共 20 組)</span>
                 <span class="badge" style="background-color: #27ae60;">正常</span>
             </div>
             <div class="card-body">
-                <div class="card-row">✅ <b>網站導覽</b> (狀態: 200)</div><div class="card-row">✅ <b>首長信箱</b> (狀態: 200)</div><div class="card-row">✅ <b>常見問答</b> (狀態: 200)</div><div class="card-row">✅ <b>雙語詞彙</b> (狀態: 200)</div><div class="card-row">✅ <b>廉政園地</b> (狀態: 200)</div>
+                <div class="card-row">🎲 <b>2026/09/14   廉政宣</b> (狀態: 200)</div><div class="card-row">🎲 <b>棲地保育</b> (狀態: 200)</div><div class="card-row">🎲 <b>RSS訂閱</b> (狀態: 200)</div><div class="card-row">🎲 <b>施政計畫</b> (狀態: 200)</div><div class="card-row">🎲 <b>航測及遙測分署</b> (狀態: 200)</div><div class="card-row">🎲 <b>性別平等</b> (狀態: 200)</div><div class="card-row">🎲 <b>計畫與報告</b> (狀態: 200)</div><div class="card-row">🎲 <b>雙月刊</b> (狀態: 200)</div><div class="card-row">🎲 <b>軌道維護資訊</b> (狀態: 200)</div><div class="card-row">🎲 <b>影音資訊平台</b> (狀態: 200)</div><div class="card-row">🎲 <b>生態資源維護</b> (狀態: 200)</div><div class="card-row">🎲 <b>重大政策</b> (狀態: 200)</div><div class="card-row">🎲 <b>內部控制聲明書專區</b> (狀態: 200)</div><div class="card-row">🎲 <b>其他服務申請</b> (狀態: 200)</div><div class="card-row">🎲 <b>租用國有林地申請國有林地租用 助</b> (狀態: 200)</div><div class="card-row">🎲 <b>山村綠色經濟</b> (狀態: 200)</div><div class="card-row">🎲 <b>自然保護(留)區進入申請</b> (狀態: 200)</div><div class="card-row">🎲 <b>國有林地申請</b> (狀態: 200)</div><div class="card-row">🎲 <b>林火風險評估系統</b> (狀態: 200)</div><div class="card-row">🎲 <b>審議會會議紀錄</b> (狀態: 200)</div>
             </div>
         </div>
         
@@ -82,11 +83,11 @@
         
         <div class="card">
             <div class="card-header">
-                <span class="card-title">重大政策與公告附件下載驗證</span>
+                <span class="card-title">每日動態隨機附件下載驗證</span>
                 <span class="badge" style="background-color: #27ae60;">正常</span>
             </div>
             <div class="card-body">
-                <div class="card-row">經定向掃描 /plan 頁面，未檢出符合條件之附件</div>
+                <div class="card-row">目前站點未檢出可供隨機抽驗之附件檔案</div>
             </div>
         </div>
         
@@ -103,7 +104,7 @@
         </div>
 
         <div class="footer">
-            <div>檢核執行時間（台北時間）：2026-09-19 13:30:29</div>
+            <div>檢核執行時間（台北時間）：2026-09-19 13:42:51</div>
             <div><button class="print-btn" onclick="window.print()">🖨️ 列印 / 儲存為正式 PDF 稽核報表</button></div>
         </div>
     </div>
