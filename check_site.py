@@ -145,17 +145,32 @@ def check_website():
           ("最新公告頁面有效性", True, ["首頁未直接捕捉到公告清單結構"])
       )
 
-    # 4. 公告附件下載驗證（抽樣 5 個帶附件公告）
+    # 4. 公告與重大政策附件下載驗證（雙軌機制：最新公告不足則自動去重大政策頁面補足 5 個）
     att_items = []
     att_error_count = 0
+
+    # 收集所有可能藏有附件的頁面清單（包含最新公告 + 重大政策/業務專區頁面）
+    target_pages = [n[0] for n in news_links]
+
+    # 自動尋找「重大政策」或類似的政策頁面連結加入備援清單
+    for a_tag in soup.find_all("a", href=True):
+      text = a_tag.text.strip()
+      href = a_tag["href"]
+      if any(keyword in text for keyword in ["重大政策", "政策", "專區", "業務"]):
+        p_url = BASE_URL.rstrip("/") + href if href.startswith("/") else href
+        if p_url not in target_pages and "forest.gov.tw" in p_url:
+          target_pages.append(p_url)
+
     try:
-      for n_url, n_title in news_links:
+      for p_url in target_pages:
         if len(att_items) >= 5:
           break
-        n_res = requests.get(n_url, headers=headers, timeout=6)
-        if n_res.status_code == 200:
-          n_soup = BeautifulSoup(n_res.text, "html.parser")
-          for file_a in n_soup.find_all("a", href=True):
+        p_res = requests.get(p_url, headers=headers, timeout=6)
+        if p_res.status_code == 200:
+          p_soup = BeautifulSoup(p_res.text, "html.parser")
+          for file_a in p_soup.find_all("a", href=True):
+            if len(att_items) >= 5:
+              break
             f_href = file_a["href"].lower()
             if any(ext in f_href for ext in [".pdf", ".odf", ".doc", ".odt"]):
               att_url = (
@@ -167,31 +182,34 @@ def check_website():
                   file_a.text.strip() or f"附件檔案({f_href.split('.')[-1]})"
               )
               att_test = requests.head(att_url, headers=headers, timeout=5)
+
+              source_label = (
+                  "公告" if "news" in p_url or "bulletin" in p_url else "重大政策/專區"
+              )
               if att_test.status_code in [200, 301, 302]:
                 att_items.append(
-                    f"✅ <b>{n_title[:16]}...</b><br><span class='sub-text'>📎 附件：{att_name[:20]} (驗證有效)</span>"
+                    f"✅ <b>[{source_label}]</b> 📎 {att_name[:25]} (下載驗證有效)"
                 )
               else:
                 att_items.append(
-                    f"❌ <b>{n_title[:16]}...</b><br><span class='sub-text'>📎 附件：{att_name[:20]} (連結異常)</span>"
+                    f"❌ <b>[{source_label}]</b> 📎 {att_name[:25]} (連結異常)"
                 )
                 att_error_count += 1
-              break
     except Exception:
       pass
 
     if att_items:
       if att_error_count == 0:
-        results.append(("最新公告附件下載驗證", True, att_items))
+        results.append(("公告與政策附件下載驗證", True, att_items))
       else:
-        results.append(("最新公告附件下載驗證", False, att_items))
+        results.append(("公告與政策附件下載驗證", False, att_items))
         anomaly_count += 1
     else:
       results.append(
           (
-              "最新公告附件下載驗證",
+              "公告與政策附件下載驗證",
               True,
-              ["經深度掃描近期公告頁面，未達 5 筆帶有檔案附件之公告"],
+              ["經深度掃描公告與重大政策頁面，未檢出帶有檔案附件之項目"],
           )
       )
 
@@ -255,7 +273,6 @@ def check_website():
     bg_color = "#27ae60" if is_success else "#c0392b"
     status_text = "正常" if is_success else "異常"
 
-    # 將清單轉成美化的微型列 (Rows)
     rows_html = ""
     for item in details:
       rows_html += f'<div class="card-row">{item}</div>'
@@ -286,31 +303,27 @@ def check_website():
         .header-left p {{ margin: 0; font-size: 14px; color: #718096; }}
         .overall-badge {{ padding: 10px 22px; color: white; background-color: {overall_color}; border-radius: 30px; font-weight: bold; font-size: 15px; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }}
         
-        /* 網格改為流暢的自適應佈局，空間更開闊 */
         .grid-container {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 20px; margin-bottom: 30px; }}
-        .card {{ background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: transform 0.2s; }}
-        .card:hover {{ box-shadow: 0 4px 12px rgba(0,0,0,0.05); }}
+        .card {{ background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }}
         .card-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #edf2f7; padding-bottom: 10px; }}
         .card-title {{ font-weight: bold; font-size: 16px; color: #2d3748; }}
         .badge {{ color: white; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }}
         
-        /* 微型列樣式：讓每筆明細擁有獨立行與舒適間距 */
         .card-body {{ display: flex; flex-direction: column; gap: 8px; }}
         .card-row {{ font-size: 13px; color: #4a5568; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border-left: 3px solid #cbd5e0; line-height: 1.5; }}
         .card-row code {{ background: #edf2f7; padding: 2px 6px; border-radius: 4px; color: #e53e3e; font-family: monospace; }}
         .tag {{ background: #e2e8f0; color: #4a5568; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-left: 6px; }}
         .tag-err {{ background: #fed7d7; color: #c53030; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-left: 6px; }}
-        .sub-text {{ display: block; margin-top: 4px; color: #718096; font-size: 12px; }}
 
         .footer {{ display: flex; justify-content: space-between; align-items: center; border-top: 2px solid #edf2f7; padding-top: 20px; font-size: 13px; color: #718096; }}
-        .print-btn {{ background: #3182ce; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; box-shadow: 0 2px 5px rgba(49,130,206,0.3); transition: background 0.2s; }}
+        .print-btn {{ background: #3182ce; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; box-shadow: 0 2px 5px rgba(49,130,206,0.3); }}
         .print-btn:hover {{ background: #2b6cb0; }}
 
         @media print {{
             body {{ background: white; padding: 0; }}
             .wrapper {{ box-shadow: none; padding: 0; max-width: 100%; }}
             .print-btn {{ display: none; }}
-            .card {{ break-inside: avoid; border: 1px solid #cbd5e0; box-shadow: none; }}
+            .card {{ break-inside: avoid; border: 1px solid #cbd5e0; }}
         }}
     </style>
 </head>
@@ -341,7 +354,7 @@ def check_website():
 
   with open("index.html", "w", encoding="utf-8") as f:
     f.write(html_content)
-  print("質感優化版報表 index.html 產生成功！")
+  print("雙軌備援佐證報表 index.html 產生成功！")
 
 
 if __name__ == "__main__":
