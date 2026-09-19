@@ -4,7 +4,6 @@ import requests
 from bs4 import BeautifulSoup
 
 BASE_URL = "https://www.forest.gov.tw/"
-# 具體明確的官方核心功能與服務頁面（確保絕對找得到且穩定）
 CORE_SERVICE_PAGES = [
     {
         "name": "官方聯絡資訊與服務專線",
@@ -39,6 +38,7 @@ def check_website():
                   f"目標網址: {BASE_URL}",
                   f"狀態碼異常: {res.status_code}",
               ],
+              "normal",
           )
       )
       anomaly_count += 1
@@ -52,6 +52,7 @@ def check_website():
                   f"目標網址: {BASE_URL}",
                   "網頁可連線，但未檢出核心關鍵字「林業」",
               ],
+              "normal",
           )
       )
       anomaly_count += 1
@@ -64,14 +65,13 @@ def check_website():
                   f"目標網址: {BASE_URL}",
                   "HTTP 200 正常，成功檢出核心關鍵字「林業」",
               ],
+              "normal",
           )
       )
 
     soup = BeautifulSoup(res.text, "html.parser")
 
-    # ==========================================================
-    # 2. 第一層 Link 隨機抽檢 (共 20 組，加入實際網址超連結點擊)
-    # ==========================================================
+    # 2. 第一層 Link 隨機抽檢 (共 20 組)
     all_menu_links = []
     for a_tag in soup.find_all("a", href=True):
       href = a_tag["href"].strip()
@@ -109,7 +109,6 @@ def check_website():
               allow_redirects=True,
           )
           if sub_res.status_code in [200, 301, 302, 307, 308]:
-            # 將名稱與狀態做成超連結，方便點擊驗證
             link_items.append(
                 f'<span class="link-tag">✅ <a href="{link_url}" target="_blank" title="{link_url}">{link_text}</a> <span class="code">({sub_res.status_code})</span></span>'
             )
@@ -191,9 +190,7 @@ def check_website():
           ("最新公告頁面有效性 (抽樣 5 篇)", True, ["未捕捉到公告結構"], "normal")
       )
 
-    # ==========================================================
-    # 4. 官方核心服務與專區可用性驗證（聯絡資訊頁面 & 計畫專區）
-    # ==========================================================
+    # 4. 官方核心服務與專區可用性驗證
     service_items = []
     service_error = 0
     for page in CORE_SERVICE_PAGES:
@@ -331,7 +328,6 @@ def check_website():
         .link-tag-err {{ color: #c53030; font-weight: bold; }}
         .code {{ color: #718096; font-size: 10px; }}
 
-        /* 超連結美化：帶有專業藍色與底線提示 */
         .card-body a, .card-row a, .link-cell a {{ color: #3182ce; text-decoration: none; }}
         .card-body a:hover, .card-row a:hover, .link-cell a:hover {{ text-decoration: underline; color: #2b6cb0; }}
 
@@ -378,7 +374,7 @@ def check_website():
 
   with open("index.html", "w", encoding="utf-8") as f:
     f.write(html_content)
-  print("超連結優化版報表 index.html 產生成功！")
+  print("錯誤修正版報表 index.html 產生成功！")
 
 
 if __name__ == "__main__":
