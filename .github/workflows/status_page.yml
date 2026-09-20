@@ -2,8 +2,8 @@ name: Update Status Page
 
 on:
   schedule:
-    # 每天早上 8 點自動執行 (UTC 0點)
-    - cron: '0 0 * * *'
+    # 每天早上 8 點自動執行 (UTC 0點) 假設github自動執行會延遲,所以提早四小時
+    - cron: '0 20 * * *'
   # 允許隨時在網頁上手動按按鈕執行
   workflow_dispatch:
 
