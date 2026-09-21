@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>機關網站架構化檢核軌跡與歷史統計總覽</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f4f7f6; color: #2c3e50; margin: 0; padding: 20px; }
+        .wrapper { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .header { border-bottom: 2px solid #edf2f7; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header h2 { margin: 0 0 5px 0; font-size: 22px; color: #1a202c; }
+        .header p { margin: 0; font-size: 13px; color: #718096; }
+        .back-btn { background: #4a5568; color: white; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+        .back-btn:hover { background: #2d3748; }
+        
+        .tree-root { display: flex; flex-direction: column; gap: 20px; }
+        .level1-box { border: 1px solid #cbd5e0; border-radius: 8px; background: #ffffff; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .level1-header { background: #ebf8ff; padding: 12px 18px; font-weight: bold; font-size: 14px; color: #2b6cb0; border-bottom: 1px solid #cbd5e0; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #3182ce; }
+        .level1-body { padding: 15px; display: flex; flex-direction: column; gap: 12px; }
+        
+        .level2-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .item-title a { color: #2b6cb0; text-decoration: none; font-weight: bold; font-size: 12px; }
+        .item-title a:hover { text-decoration: underline; }
+        .item-url { font-size: 10px; color: #718096; word-break: break-all; margin-top: 2px; }
+        
+        .audit-history-strip { background: #ffffff; border: 1px dashed #cbd5e0; border-radius: 4px; padding: 6px 10px; font-size: 11px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .history-label { font-weight: bold; color: #4a5568; font-size: 10px; }
+        .record-badge { background: #edf2f7; color: #2d3748; padding: 2px 6px; border-radius: 3px; font-size: 10px; border: 1px solid #cbd5e0; }
+        .record-badge.ok { background: #f0fff4; color: #27ae60; border-color: #c6f6d5; }
+        .record-badge.err { background: #fff5f5; color: #c0392b; border-color: #fed7d7; }
+        
+        @media screen and (max-width: 768px) {
+            .wrapper { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="header">
+            <div class="header-left">
+                <h2>🌳 網站架構化檢核軌跡與歷史統計總覽</h2>
+                <p>呈現主軸：以林業及自然保育署全網站 Level 架構分類，累計追蹤網頁數：20 個</p>
+            </div>
+            <div>
+                <a href="index.html" class="back-btn">⬅️ 返回今日即時檢核報表</a>
+            </div>
+        </div>
+        <div class="tree-root">
+            
+            <div class="level1-box">
+                <div class="level1-header">
+                    <span>📁 網站架構層級：Level 1 深度目錄</span>
+                    <span style="font-size: 11px; color: #4a5568;">累計追蹤網頁：3 個</span>
+                </div>
+                <div class="level1-body">
+            
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://www.forest.gov.tw/nature" target="_blank">自然教育中心</a></b></div>
+                            <div class="item-url">路徑：https://www.forest.gov.tw/nature</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://www.forest.gov.tw/social_media" target="_blank">社群粉專</a></b></div>
+                            <div class="item-url">路徑：https://www.forest.gov.tw/social_media</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://www.forest.gov.tw/0004664" target="_blank">保安林旅遊指南</a></b></div>
+                            <div class="item-url">路徑：https://www.forest.gov.tw/0004664</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                </div></div>
+            <div class="level1-box">
+                <div class="level1-header">
+                    <span>📁 網站架構層級：Level 2 深度目錄</span>
+                    <span style="font-size: 11px; color: #4a5568;">累計追蹤網頁：5 個</span>
+                </div>
+                <div class="level1-body">
+            
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://recreation.forest.gov.tw/" target="_blank">台灣山林悠遊網</a></b></div>
+                            <div class="item-url">路徑：https://recreation.forest.gov.tw/</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://pa.forest.gov.tw/" target="_blank">自然保護區域進入申請應如何申請? 具備什麼條件? 需要進入臺灣自然保護區域的您不可不知!了解更多</a></b></div>
+                            <div class="item-url">路徑：https://pa.forest.gov.tw/</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://taitung.forest.gov.tw" target="_blank">臺東分署</a></b></div>
+                            <div class="item-url">路徑：https://taitung.forest.gov.tw</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://media.forest.gov.tw/" target="_blank">影音資訊平台</a></b></div>
+                            <div class="item-url">路徑：https://media.forest.gov.tw/</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://ffwi.forest.gov.tw/" target="_blank">林火風險評估系統</a></b></div>
+                            <div class="item-url">路徑：https://ffwi.forest.gov.tw/</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                </div></div>
+            <div class="level1-box">
+                <div class="level1-header">
+                    <span>📁 網站架構層級：Level 3 深度目錄</span>
+                    <span style="font-size: 11px; color: #4a5568;">累計追蹤網頁：7 個</span>
+                </div>
+                <div class="level1-body">
+            
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://taiwanwood.forest.gov.tw/zh-tw/" target="_blank">臺灣木材網</a></b></div>
+                            <div class="item-url">路徑：https://taiwanwood.forest.gov.tw/zh-tw/</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://afrts.forest.gov.tw/TP01_1.aspx" target="_blank">阿里山林鐵路訂票系統線上訂票， 輕鬆搭乘阿里山森林鐵路！了解更多</a></b></div>
+                            <div class="item-url">路徑：https://afrts.forest.gov.tw/TP01_1.aspx</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://esg.forest.gov.tw/ForestESG" target="_blank">自然碳匯與生物多樣性專案媒合平臺</a></b></div>
+                            <div class="item-url">路徑：https://esg.forest.gov.tw/ForestESG</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://theme.forest.gov.tw/smartmap/" target="_blank">森林旅遊地圖</a></b></div>
+                            <div class="item-url">路徑：https://theme.forest.gov.tw/smartmap/</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://theme.forest.gov.tw/dashboard/" target="_blank">數位儀表板</a></b></div>
+                            <div class="item-url">路徑：https://theme.forest.gov.tw/dashboard/</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://theme.forest.gov.tw/forestplant/" target="_blank">臺灣原生樹木種苗網</a></b></div>
+                            <div class="item-url">路徑：https://theme.forest.gov.tw/forestplant/</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://qlakenew.forest.gov.tw/public/" target="_blank">國有林防災應變及堰塞湖監測系統</a></b></div>
+                            <div class="item-url">路徑：https://qlakenew.forest.gov.tw/public/</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                </div></div>
+            <div class="level1-box">
+                <div class="level1-header">
+                    <span>📁 網站架構層級：Level 4 深度目錄</span>
+                    <span style="font-size: 11px; color: #4a5568;">累計追蹤網頁：5 個</span>
+                </div>
+                <div class="level1-body">
+            
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://theme.forest.gov.tw/dashboard/0010406.html" target="_blank">觀看更多數據</a></b></div>
+                            <div class="item-url">路徑：https://theme.forest.gov.tw/dashboard/0010406.html</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://ecollect.forest.gov.tw/Ecological/ProjectManager/ResultPresentation.aspx" target="_blank">生態調查資料庫系統</a></b></div>
+                            <div class="item-url">路徑：https://ecollect.forest.gov.tw/Ecological/ProjectManager/ResultPresentation.aspx</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge err">2026-09-22 (404 異常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://theme.forest.gov.tw/dashboard/0010445.html" target="_blank">觀看更多數據</a></b></div>
+                            <div class="item-url">路徑：https://theme.forest.gov.tw/dashboard/0010445.html</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://recreation.forest.gov.tw/Forestry/Rail" target="_blank">軌道維護資訊</a></b></div>
+                            <div class="item-url">路徑：https://recreation.forest.gov.tw/Forestry/Rail</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="https://theme.forest.gov.tw/dashboard/0010405.html" target="_blank">觀看更多數據</a></b></div>
+                            <div class="item-url">路徑：https://theme.forest.gov.tw/dashboard/0010405.html</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        <span class="record-badge ok">2026-09-22 (200 正常)</span>
+                    </div>
+                </div>
+                </div></div>
+        </div>
+    </div>
+</body>
+</html>
