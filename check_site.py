@@ -27,15 +27,15 @@ HISTORY_FILE = "audit_history.json"
 
 
 def get_url_depth(url):
-  """計算網址的深度（依斜線數量或層級判定）"""
+  """計算網址的深度（依斜線數量判定）"""
   clean_path = url.replace(BASE_URL.rstrip("/"), "")
   parts = [p for p in clean_path.split("/") if p]
   depth = len(parts)
-  return max(1, min(depth, 4))  # 歸類為 Level 1 至 Level 4
+  return max(1, min(depth, 4))
 
 
 def crawl_deep_links():
-  """遞迴爬蟲：探索並收集至多 Level 4 的內部連結"""
+  """遞迴爬蟲：收集至多 Level 4 的內部連結"""
   headers = {
       "User-Agent": (
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -52,7 +52,6 @@ def crawl_deep_links():
     soup = BeautifulSoup(res.text, "html.parser")
     queue = []
 
-    # 收集 Level 1 連結
     for a_tag in soup.find_all("a", href=True):
       href = a_tag["href"].strip()
       text = a_tag.text.strip()
@@ -73,7 +72,6 @@ def crawl_deep_links():
             if depth < 3:
               queue.append(clean_url)
 
-    # 進行第二輪淺層遞迴（確保抓到 Level 3 與 Level 4）
     for sample_url in queue[:5]:
       try:
         sub_res = requests.get(sample_url, headers=headers, timeout=5)
@@ -94,11 +92,162 @@ def crawl_deep_links():
                   tiered_pool[depth].append((clean_url, text))
       except Exception:
         continue
-
   except Exception:
     pass
 
   return tiered_pool
+
+
+def update_and_save_history(today_str, sampled_results):
+  """讀取並更新年度歷史資料庫 (JSON)"""
+  history_data = []
+  if os.path.exists(HISTORY_FILE):
+    try:
+      with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+        history_data = json.load(f)
+    except Exception:
+      history_data = []
+
+  # 移除今天可能已存在的舊紀錄（避免重複執行覆蓋）
+  history_data = [h for h in history_data if h.get("date") != today_str]
+
+  # 新增今天的紀錄
+  history_data.append({"date": today_str, "items": sampled_results})
+
+  with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+    json.dump(history_data, f, ensure_ascii=False, indent=2)
+
+  return history_data
+
+
+def generate_history_html(history_data):
+  """產生以網站架構為主軸的歷史統計頁面 (history.html)"""
+  # 將資料重新梳理為：{ depth: { url: { "title": ..., "history": [ {date, status, ok}, ... ] } } }
+  tree_structure = {1: {}, 2: {}, 3: {}, 4: {}}
+
+  for record in history_data:
+    date_str = record["date"]
+    for item in record["items"]:
+      d = item["depth"]
+      url = item["url"]
+      title = item["title"]
+      status = item["status"]
+      ok = item["ok"]
+
+      if url not in tree_structure[d]:
+        tree_structure[d][url] = {"title": title, "history": []}
+
+      # 避免同一天重複紀錄
+      tree_structure[d][url]["history"].append({
+          "date": date_str,
+          "status": status,
+          "ok": ok,
+      })
+
+  # 組裝 HTML 內容
+  tree_html = ""
+  total_tracked_urls = sum(len(v) for v in tree_structure.values())
+
+  for d in range(1, 5):
+    items_dict = tree_structure[d]
+    if items_dict:
+      tree_html += f"""
+            <div class="level1-box">
+                <div class="level1-header">
+                    <span>📁 網站架構層級：Level {d} 深度目錄</span>
+                    <span style="font-size: 11px; color: #4a5568;">累計追蹤網頁：{len(items_dict)} 個</span>
+                </div>
+                <div class="level1-body">
+            """
+      for url, data in items_dict.items():
+        badges_html = ""
+        # 依日期排序軌跡
+        sorted_history = sorted(
+            data["history"], key=lambda x: x["date"], reverse=True
+        )
+        for h in sorted_history:
+          b_class = "ok" if h["ok"] else "err"
+          b_text = (
+              f"{h['date']} ({h['status']} 正常)"
+              if h["ok"]
+              else f"{h['date']} ({h['status']} 異常)"
+          )
+          badges_html += (
+              f'<span class="record-badge {b_class}">{b_text}</span>'
+          )
+
+        tree_html += f"""
+                <div class="level2-item">
+                    <div class="item-info">
+                        <div>
+                            <div class="item-title">📄 <b><a href="{url}" target="_blank">{data['title']}</a></b></div>
+                            <div class="item-url">路徑：{url}</div>
+                        </div>
+                    </div>
+                    <div class="audit-history-strip">
+                        <span class="history-label">歷次抽檢軌跡：</span>
+                        {badges_html}
+                    </div>
+                </div>
+                """
+      tree_html += "</div></div>"
+
+  history_html_content = f"""<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>機關網站架構化檢核軌跡與歷史統計總覽</title>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f4f7f6; color: #2c3e50; margin: 0; padding: 20px; }}
+        .wrapper {{ max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
+        .header {{ border-bottom: 2px solid #edf2f7; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }}
+        .header h2 {{ margin: 0 0 5px 0; font-size: 22px; color: #1a202c; }}
+        .header p {{ margin: 0; font-size: 13px; color: #718096; }}
+        .back-btn {{ background: #4a5568; color: white; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; }}
+        .back-btn:hover {{ background: #2d3748; }}
+        
+        .tree-root {{ display: flex; flex-direction: column; gap: 20px; }}
+        .level1-box {{ border: 1px solid #cbd5e0; border-radius: 8px; background: #ffffff; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }}
+        .level1-header {{ background: #ebf8ff; padding: 12px 18px; font-weight: bold; font-size: 14px; color: #2b6cb0; border-bottom: 1px solid #cbd5e0; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #3182ce; }}
+        .level1-body {{ padding: 15px; display: flex; flex-direction: column; gap: 12px; }}
+        
+        .level2-item {{ background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }}
+        .item-title a {{ color: #2b6cb0; text-decoration: none; font-weight: bold; font-size: 12px; }}
+        .item-title a:hover {{ text-decoration: underline; }}
+        .item-url {{ font-size: 10px; color: #718096; word-break: break-all; margin-top: 2px; }}
+        
+        .audit-history-strip {{ background: #ffffff; border: 1px dashed #cbd5e0; border-radius: 4px; padding: 6px 10px; font-size: 11px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }}
+        .history-label {{ font-weight: bold; color: #4a5568; font-size: 10px; }}
+        .record-badge {{ background: #edf2f7; color: #2d3748; padding: 2px 6px; border-radius: 3px; font-size: 10px; border: 1px solid #cbd5e0; }}
+        .record-badge.ok {{ background: #f0fff4; color: #27ae60; border-color: #c6f6d5; }}
+        .record-badge.err {{ background: #fff5f5; color: #c0392b; border-color: #fed7d7; }}
+        
+        @media screen and (max-width: 768px) {{
+            .wrapper {{ padding: 15px; }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="header">
+            <div class="header-left">
+                <h2>🌳 網站架構化檢核軌跡與歷史統計總覽</h2>
+                <p>呈現主軸：以林業及自然保育署全網站 Level 架構分類，累計追蹤網頁數：{total_tracked_urls} 個</p>
+            </div>
+            <div>
+                <a href="index.html" class="back-btn">⬅️ 返回今日即時檢核報表</a>
+            </div>
+        </div>
+        <div class="tree-root">
+            {tree_html}
+        </div>
+    </div>
+</body>
+</html>
+"""
+  with open("history.html", "w", encoding="utf-8") as f:
+    f.write(history_html_content)
 
 
 def check_website():
@@ -121,25 +270,6 @@ def check_website():
     res = requests.get(BASE_URL, headers=headers, timeout=REQUEST_TIMEOUT)
     if res.status_code != 200:
       raise Exception("首頁無法正常存取")
-    elif "林業" not in res.text:
-      results.append(
-          (
-              "首頁可用性與核心關鍵字",
-              False,
-              ["網頁可連線，但未檢出核心關鍵字「林業」"],
-              "normal",
-          )
-      )
-      anomaly_count += 1
-    else:
-      results.append(
-          (
-              "首頁可用性與核心關鍵字",
-              True,
-              [f"目標網址: {BASE_URL} (HTTP 200 正常)"],
-              "normal",
-          )
-      )
 
     tiered_pool = crawl_deep_links()
 
@@ -169,9 +299,11 @@ def check_website():
 
     depth_results = {1: [], 2: [], 3: [], 4: []}
     link_broken_total = 0
+    today_audit_records = []
 
     for depth, link_url, link_text in sampled_items:
       status_code = 0
+      is_ok = False
       try:
         sub_res = requests.get(
             link_url,
@@ -181,6 +313,7 @@ def check_website():
         )
         status_code = sub_res.status_code
         if status_code in [200, 301, 302, 307, 308]:
+          is_ok = True
           depth_results[depth].append(
               f'<div class="link-item">✅ <b><a href="{link_url}" target="_blank">{link_text}</a></b><br>'
               f'<a href="{link_url}" target="_blank" class="url-text">{link_url}</a> '
@@ -199,6 +332,18 @@ def check_website():
             f'<div class="link-item err">❌ <b><a href="{link_url}" target="_blank">{link_text}</a></b><br>'
             f'<a href="{link_url}" target="_blank" class="url-text">{link_url}</a> (深度 L{depth} | 連線逾時)</div>'
         )
+
+      today_audit_records.append({
+          "title": link_text,
+          "url": link_url,
+          "depth": depth,
+          "status": status_code,
+          "ok": is_ok,
+      })
+
+    # 更新歷史 JSON 並生成 history.html
+    history_data = update_and_save_history(today_str, today_audit_records)
+    generate_history_html(history_data)
 
     tree_html_blocks = []
     for d in range(1, 5):
@@ -222,22 +367,6 @@ def check_website():
       )
       if not is_link_success:
         anomaly_count += 1
-
-    day_of_year = now_utc8.timetuple().tm_yday
-    current_keyword = SEARCH_KEYWORDS_POOL[
-        day_of_year % len(SEARCH_KEYWORDS_POOL)
-    ]
-    search_url = f"{BASE_URL.rstrip('/')}/search?q={current_keyword}"
-    results.append(
-        (
-            "站內搜尋功能驗證 (每日輪替)",
-            True,
-            [
-                f"測試關鍵字：<code>{current_keyword}</code><br>檢索網址：<a href='{search_url}' target='_blank' class='url-text'>{search_url}</a>"
-            ],
-            "normal",
-        )
-    )
 
   except Exception as e:
     overall_status = "系統異常 (Down)"
@@ -334,7 +463,7 @@ def check_website():
   with open("index.html", "w", encoding="utf-8") as f:
     f.write(html_content)
 
-  print("Level 1-4 深度遞迴抽檢報表 index.html 產生成功！")
+  print("即時報表與歷史統計產生器執行完畢！")
 
 
 if __name__ == "__main__":
