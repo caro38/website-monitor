@@ -83,9 +83,11 @@ def check_website():
     soup = BeautifulSoup(res.text, "html.parser")
 
     # ==========================================================
-    # 2. 第一層 Link 隨機抽檢 (共 20 組：名稱 + 完整可點擊網址)
+    # 2. Level 1 架構分層隨機抽樣 (全域去重，總計 20 組)
     # ==========================================================
-    all_menu_links = []
+    # 步驟 A: 從首頁收集中文選單及其對應的 Level 1 進入點
+    level1_categories = {}  # 格式: { "分類名稱": [ (url, title), ... ] }
+
     for a_tag in soup.find_all("a", href=True):
       href = a_tag["href"].strip()
       text = a_tag.text.strip()
@@ -103,17 +105,76 @@ def check_website():
 
         clean_url = full_url.split("#")[0]
         if clean_url != BASE_URL:
+          # 簡單根據網址特徵或選單文字歸納 Level 1 群組
+          cat_name = "核心導覽與服務專區"
+          if any(
+              k in clean_url
+              for k in ["recreation", "trail", "park", "forest"]
+          ):
+            cat_name = "森林育樂與遊憩"
+          elif any(
+              k in clean_url for k in ["conservation", "wildlife", "reserve"]
+          ):
+            cat_name = "自然保育與生態"
+          elif any(k in clean_url for k in ["plan", "policy", "business"]):
+            cat_name = "施政計畫與森林經營"
+          elif any(k in clean_url for k in ["law", "pub", "download"]):
+            cat_name = "法規與公開資訊"
+
+          if cat_name not in level1_categories:
+            level1_categories[cat_name] = []
+
           item = (clean_url, text)
-          if item not in all_menu_links:
-            all_menu_links.append(item)
+          if item not in level1_categories[cat_name]:
+            level1_categories[cat_name].append(item)
 
-    random.shuffle(all_menu_links)
-    sampled_menus = all_menu_links[:20]
+    # 如果首頁抓到的分類不足，建立預設保底分類群組
+    if not level1_categories:
+      level1_categories["核心導覽與服務專區"] = []
+      for a_tag in soup.find_all("a", href=True):
+        href = a_tag["href"].strip()
+        text = a_tag.text.strip()
+        if href and not href.startswith(("#", "javascript:", "tel:")):
+          full_url = (
+              BASE_URL.rstrip("/") + href if href.startswith("/") else href
+          )
+          if "forest.gov.tw" in full_url and full_url != BASE_URL:
+            level1_categories["核心導覽與服務專區"].append(
+                (full_url.split("#")[0], text)
+            )
 
-    link_items = []
-    link_broken = 0
-    if sampled_menus:
-      for link_url, link_text in sampled_menus:
+    # 步驟 B: 隨機抽選 2 個 Level 1 分類，並從中各自抽取 10 個不重複項目（總計 20 組）
+    available_cats = list(level1_categories.keys())
+    random.shuffle(available_cats)
+    selected_cats = available_cats[:2]  # 抽 2 個分類
+
+    # 如果總分類小於 2 個，就直接用現有的
+    if not selected_cats:
+      selected_cats = available_cats
+
+    global_seen_urls = set()
+    stratified_results = {}  # 格式: { "分類名稱": [ 渲染 HTML 項目, ... ] }
+    total_sampled_count = 0
+    target_per_cat = 10
+
+    for cat in selected_cats:
+      links_in_cat = level1_categories[cat]
+      random.shuffle(links_in_cat)
+
+      stratified_results[cat] = []
+      cat_count = 0
+
+      for link_url, link_text in links_in_cat:
+        if link_url in global_seen_urls:
+          continue
+        if cat_count >= target_per_cat or total_sampled_count >= 20:
+          break
+
+        global_seen_urls.add(link_url)
+        cat_count += 1
+        total_sampled_count += 1
+
+        # 執行即時狀態驗證
         try:
           sub_res = requests.get(
               link_url,
@@ -122,46 +183,60 @@ def check_website():
               allow_redirects=True,
           )
           if sub_res.status_code in [200, 301, 302, 307, 308]:
-            link_items.append(
+            stratified_results[cat].append(
                 f'<div class="link-item">✅ <b><a href="{link_url}" target="_blank">{link_text}</a></b><br>'
                 f'<a href="{link_url}" target="_blank" class="url-text">{link_url}</a> '
                 f'<span class="code">(狀態: {sub_res.status_code})</span></div>'
             )
           else:
-            link_items.append(
+            stratified_results[cat].append(
                 f'<div class="link-item err">❌ <b><a href="{link_url}" target="_blank">{link_text}</a></b><br>'
                 f'<a href="{link_url}" target="_blank" class="url-text">{link_url}</a> '
                 f'<span class="code">(異常: {sub_res.status_code})</span></div>'
             )
-            link_broken += 1
         except Exception:
-          link_items.append(
+          stratified_results[cat].append(
               f'<div class="link-item err">❌ <b><a href="{link_url}" target="_blank">{link_text}</a></b><br>'
               f'<a href="{link_url}" target="_blank" class="url-text">{link_url}</a> (連線逾時)</div>'
           )
-          link_broken += 1
 
-      if link_broken == 0:
-        results.append(
-            ("第一層 Link 隨機抽檢 (共 20 組)", True, link_items, "grid-links")
+    # 組合樹狀架構分組 HTML
+    tree_html_blocks = []
+    link_broken_total = 0
+    for cat, items in stratified_results.items():
+      if items:
+        tree_html_blocks.append(
+            f'<div class="tree-category-title">📁 Level 1 分類：{cat} <span class="badge-sub">抽檢 {len(items)} 組</span></div>'
         )
-      else:
-        results.append(
-            ("第一層 Link 隨機抽檢 (共 20 組)", False, link_items, "grid-links")
-        )
+        for item_html in items:
+          tree_html_blocks.append(item_html)
+          if "err" in item_html:
+            link_broken_total += 1
+
+    if total_sampled_count > 0:
+      is_link_success = link_broken_total == 0
+      results.append(
+          (
+              f"網站架構分層隨機抽檢 (共 {total_sampled_count} 組)",
+              is_link_success,
+              tree_html_blocks,
+              "full-width",
+          )
+      )
+      if not is_link_success:
         anomaly_count += 1
     else:
       results.append(
           (
-              "第一層 Link 隨機抽檢 (共 20 組)",
+              "網站架構分層隨機抽檢",
               True,
-              ["未捕捉到足夠的導覽 Link"],
-              "normal",
+              ["未捕捉到足夠的架構 Link"],
+              "full-width",
           )
       )
 
     # ==========================================================
-    # 3. 最新公告頁面檢查（抽樣 5 篇：完整標題與絕對路徑網址）
+    # 3. 最新公告頁面檢查（抽樣 5 篇）
     # ==========================================================
     news_links = []
     for a_tag in soup.find_all("a", href=True):
@@ -202,20 +277,15 @@ def check_website():
           news_error += 1
 
       if news_error == 0:
-        results.append(("最新公告頁面有效性 (抽樣 5 篇)", True, news_items, "full-card"))
+        results.append(("最新公告頁面有效性 (抽樣 5 篇)", True, news_items, "normal"))
       else:
         results.append(
-            ("最新公告頁面有效性 (抽樣 5 篇)", False, news_items, "full-card")
+            ("最新公告頁面有效性 (抽樣 5 篇)", False, news_items, "normal")
         )
         anomaly_count += 1
     else:
       results.append(
-          (
-              "最新公告頁面有效性 (抽樣 5 篇)",
-              True,
-              ["未捕捉到公告結構"],
-              "full-card",
-          )
+          ("最新公告頁面有效性 (抽樣 5 篇)", True, ["未捕捉到公告結構"], "normal")
       )
 
     # 4. 官方核心服務與專區可用性驗證
@@ -246,15 +316,15 @@ def check_website():
 
     if service_error == 0:
       results.append(
-          ("官方核心服務與專區可用性驗證", True, service_items, "full-card")
+          ("官方核心服務與專區可用性驗證", True, service_items, "normal")
       )
     else:
       results.append(
-          ("官方核心服務與專區可用性驗證", False, service_items, "full-card")
+          ("官方核心服務與專區可用性驗證", False, service_items, "normal")
       )
       anomaly_count += 1
 
-    # 5. 站內搜尋功能驗證（依日期自動輪替題庫中的關鍵字）
+    # 5. 站內搜尋功能驗證（每日輪替）
     now_utc8 = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
     day_of_year = now_utc8.timetuple().tm_yday
     current_keyword = SEARCH_KEYWORDS_POOL[
@@ -273,7 +343,7 @@ def check_website():
                     f'輪替測試關鍵字：<code>{current_keyword}</code><br>'
                     f'檢索網址：<a href="{search_url}" target="_blank" class="url-text">{search_url}</a> (狀態碼: {s_res.status_code}) - 檢索引擎運作正常'
                 ],
-                "full-card",
+                "normal",
             )
         )
       else:
@@ -285,7 +355,7 @@ def check_website():
                     f'輪替測試關鍵字：<code>{current_keyword}</code><br>'
                     f'檢索網址：<a href="{search_url}" target="_blank" class="url-text">{search_url}</a> (異常代碼)'
                 ],
-                "full-card",
+                "normal",
             )
         )
         anomaly_count += 1
@@ -297,7 +367,7 @@ def check_website():
               [
                   f"輪替測試關鍵字：<code>{current_keyword}</code><br>搜尋模組連線逾時"
               ],
-              "full-card",
+              "normal",
           )
       )
       anomaly_count += 1
@@ -305,7 +375,7 @@ def check_website():
   except Exception as e:
     overall_status = "系統異常 (Down)"
     overall_color = "#e74c3c"
-    results.append(("系統狀態", False, [f"無法連線: {str(e)}"], "full-card"))
+    results.append(("系統狀態", False, [f"無法連線: {str(e)}"], "normal"))
     anomaly_count += 99
 
   if anomaly_count > 0:
@@ -319,18 +389,15 @@ def check_website():
     bg_color = "#27ae60" if is_success else "#c0392b"
     status_text = "正常" if is_success else "異常"
 
-    if layout_type == "grid-links":
-      rows_html = '<div class="links-grid">'
-      for item in details:
-        rows_html += f'<div class="link-cell">{item}</div>'
-      rows_html += "</div>"
-    else:
-      rows_html = ""
-      for item in details:
+    rows_html = ""
+    for item in details:
+      if "tree-category-title" in item:
+        rows_html += item
+      else:
         rows_html += f'<div class="card-row">{item}</div>'
 
     cards_html += f"""
-        <div class="card {'full-width' if layout_type == 'full-width' or layout_type == 'grid-links' else ''}">
+        <div class="card {'full-width' if layout_type == 'full-width' else ''}">
             <div class="card-header">
                 <span class="card-title">{title}</span>
                 <span class="badge" style="background-color: {bg_color};">{status_text}</span>
@@ -346,7 +413,7 @@ def check_website():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>機關網站日常檢核佐證報表</title>
+    <title>機關網站架構化抽檢佐證報表</title>
     <style>
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f6; color: #2c3e50; margin: 0; padding: 15px; }}
         .wrapper {{ max-width: 1100px; margin: 0 auto; background: white; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
@@ -361,24 +428,21 @@ def check_website():
         .card-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #edf2f7; padding-bottom: 6px; }}
         .card-title {{ font-weight: bold; font-size: 13px; color: #2d3748; }}
         .badge {{ color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }}
+        .badge-sub {{ background: #edf2f7; color: #4a5568; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; float: right; }}
         
         .card-body {{ display: flex; flex-direction: column; gap: 6px; }}
         .card-row {{ font-size: 11px; color: #4a5568; background: #f8fafc; padding: 6px 10px; border-radius: 4px; border-left: 2px solid #3182ce; line-height: 1.4; }}
         
-        .links-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }}
-        .link-cell {{ font-size: 11px; background: #f8fafc; padding: 6px 10px; border-radius: 4px; border-left: 2px solid #3182ce; color: #2d3748; line-height: 1.4; }}
-        .link-item a {{ color: #2b6cb0; text-decoration: none; font-weight: bold; }}
-        .link-item a:hover {{ text-decoration: underline; }}
+        /* 樹狀分類標題樣式 */
+        .tree-category-title {{ font-size: 12px; font-weight: bold; color: #2b6cb0; background: #ebf8ff; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border-left: 4px solid #3182ce; }}
+        
+        .link-item a, .news-item a, .card-row a {{ color: #2b6cb0; text-decoration: none; font-weight: bold; }}
+        .link-item a:hover, .news-item a:hover, .card-row a:hover {{ text-decoration: underline; }}
         
         .url-text {{ font-size: 10px; color: #718096; word-break: break-all; text-decoration: none; }}
         .url-text:hover {{ text-decoration: underline; color: #3182ce; }}
         
         .code {{ color: #4a5568; font-size: 10px; font-weight: bold; }}
-
-        .news-item, .card-row {{ font-size: 11px; color: #4a5568; background: #f8fafc; padding: 6px 10px; border-radius: 4px; border-left: 2px solid #3182ce; line-height: 1.4; }}
-        .news-item a {{ color: #2b6cb0; text-decoration: none; font-weight: bold; }}
-        .news-item a:hover {{ text-decoration: underline; }}
-
         .tag {{ background: #e2e8f0; color: #4a5568; padding: 1px 4px; border-radius: 3px; font-size: 10px; float: right; }}
         .tag-err {{ background: #fed7d7; color: #c53030; padding: 1px 4px; border-radius: 3px; font-size: 10px; float: right; }}
 
@@ -386,18 +450,17 @@ def check_website():
         .print-btn {{ background: #3182ce; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; box-shadow: 0 1px 3px rgba(49,130,206,0.3); }}
         .print-btn:hover {{ background: #2b6cb0; }}
 
-        /* RWD 響應式手機版適應設定：螢幕小於 768px 時自動改為單欄，避免擠壓跑版 */
+        /* RWD 響應式手機版適應設定 */
         @media screen and (max-width: 768px) {{
             body {{ padding: 5px; }}
             .wrapper {{ padding: 15px; width: 100%; box-sizing: border-box; }}
             .grid-container {{ display: flex; flex-direction: column; gap: 10px; }}
             .card.full-width {{ grid-column: span 1; }}
-            .links-grid {{ display: flex; flex-direction: column; gap: 6px; }}
             .header {{ flex-direction: column; align-items: flex-start; gap: 10px; }}
             .overall-badge {{ align-self: flex-start; }}
         }}
 
-        /* A4 列印強制單頁輸出設定 */
+        /* A4 列印設定 */
         @media print {{
             @page {{ size: A4 portrait; margin: 10mm; }}
             body {{ background: white; padding: 0; zoom: 90%; }}
@@ -411,7 +474,7 @@ def check_website():
     <div class="wrapper">
         <div class="header">
             <div class="header-left">
-                <h2>🏛️ 機關網站核心功能每日檢核暨動態佐證報表</h2>
+                <h2>🏛️ 機關網站架構化每日檢核暨動態佐證報表</h2>
                 <p>監控目標：<a href="{BASE_URL}" target="_blank" style="color: #3182ce; text-decoration: none;">{BASE_URL}</a></p>
             </div>
             <div>
@@ -425,7 +488,7 @@ def check_website():
 
         <div class="footer">
             <div>檢核執行時間（台北時間）：{now}</div>
-            <div><button class="print-btn" onclick="window.print()">🖨️ 列印 / 儲存為正式 PDF 單頁報表</button></div>
+            <div><button class="print-btn" onclick="window.print()">🖨️ 列印 / 儲存為正式 PDF 報表</button></div>
         </div>
     </div>
 </body>
@@ -434,7 +497,7 @@ def check_website():
 
   with open("index.html", "w", encoding="utf-8") as f:
     f.write(html_content)
-  print("手機響應式優化版報表 index.html 產生成功！")
+  print("架構化分層隨機抽樣報表 index.html 產生成功！")
 
 
 if __name__ == "__main__":
