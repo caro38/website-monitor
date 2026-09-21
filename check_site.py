@@ -83,10 +83,15 @@ def check_website():
     soup = BeautifulSoup(res.text, "html.parser")
 
     # ==========================================================
-    # 2. Level 1 架構分層隨機抽樣 (全域去重，總計 20 組)
+    # 2. Level 1 架構分層隨機抽樣 (保證 2 個分類，總計 20 組)
     # ==========================================================
-    # 步驟 A: 從首頁收集中文選單及其對應的 Level 1 進入點
-    level1_categories = {}  # 格式: { "分類名稱": [ (url, title), ... ] }
+    all_valid_links = []
+    level1_categories = {
+        "森林育樂與遊憩專區": [],
+        "自然保育與生態專區": [],
+        "施政計畫與森林經營": [],
+        "法規與公開資訊專區": [],
+    }
 
     for a_tag in soup.find_all("a", href=True):
       href = a_tag["href"].strip()
@@ -105,60 +110,57 @@ def check_website():
 
         clean_url = full_url.split("#")[0]
         if clean_url != BASE_URL:
-          # 簡單根據網址特徵或選單文字歸納 Level 1 群組
-          cat_name = "核心導覽與服務專區"
+          item = (clean_url, text)
+          if item not in all_valid_links:
+            all_valid_links.append(item)
+
+          # 歸類至對應的 Level 1 群組
           if any(
               k in clean_url
               for k in ["recreation", "trail", "park", "forest"]
           ):
-            cat_name = "森林育樂與遊憩"
+            if item not in level1_categories["森林育樂與遊憩專區"]:
+              level1_categories["森林育樂與遊憩專區"].append(item)
           elif any(
               k in clean_url for k in ["conservation", "wildlife", "reserve"]
           ):
-            cat_name = "自然保育與生態"
+            if item not in level1_categories["自然保育與生態專區"]:
+              level1_categories["自然保育與生態專區"].append(item)
           elif any(k in clean_url for k in ["plan", "policy", "business"]):
-            cat_name = "施政計畫與森林經營"
-          elif any(k in clean_url for k in ["law", "pub", "download"]):
-            cat_name = "法規與公開資訊"
+            if item not in level1_categories["施政計畫與森林經營"]:
+              level1_categories["施政計畫與森林經營"].append(item)
+          else:
+            if item not in level1_categories["法規與公開資訊專區"]:
+              level1_categories["法規與公開資訊專區"].append(item)
 
-          if cat_name not in level1_categories:
-            level1_categories[cat_name] = []
+    # 過濾掉沒有內容的分類
+    active_cats = {
+        k: v for k, v in level1_categories.items() if len(v) >= 5
+    }
 
-          item = (clean_url, text)
-          if item not in level1_categories[cat_name]:
-            level1_categories[cat_name].append(item)
+    # 如果有效分類少於 2 個，直接將全部有效連結隨機對半拆成 2 個群組，確保一定有 2 個 Level 1
+    if len(active_cats) < 2:
+      random.shuffle(all_valid_links)
+      mid = len(all_valid_links) // 2
+      if mid < 5:
+        mid = 5
+      active_cats = {
+          "核心業務第一層導覽（A群組）": all_valid_links[:mid],
+          "核心業務第一層導覽（B群組）": all_valid_links[mid:],
+      }
 
-    # 如果首頁抓到的分類不足，建立預設保底分類群組
-    if not level1_categories:
-      level1_categories["核心導覽與服務專區"] = []
-      for a_tag in soup.find_all("a", href=True):
-        href = a_tag["href"].strip()
-        text = a_tag.text.strip()
-        if href and not href.startswith(("#", "javascript:", "tel:")):
-          full_url = (
-              BASE_URL.rstrip("/") + href if href.startswith("/") else href
-          )
-          if "forest.gov.tw" in full_url and full_url != BASE_URL:
-            level1_categories["核心導覽與服務專區"].append(
-                (full_url.split("#")[0], text)
-            )
-
-    # 步驟 B: 隨機抽選 2 個 Level 1 分類，並從中各自抽取 10 個不重複項目（總計 20 組）
-    available_cats = list(level1_categories.keys())
-    random.shuffle(available_cats)
-    selected_cats = available_cats[:2]  # 抽 2 個分類
-
-    # 如果總分類小於 2 個，就直接用現有的
-    if not selected_cats:
-      selected_cats = available_cats
+    # 隨機挑選 2 個不同的分類
+    cat_keys = list(active_cats.keys())
+    random.shuffle(cat_keys)
+    selected_keys = cat_keys[:2]
 
     global_seen_urls = set()
-    stratified_results = {}  # 格式: { "分類名稱": [ 渲染 HTML 項目, ... ] }
+    stratified_results = {}
     total_sampled_count = 0
-    target_per_cat = 10
+    target_per_cat = 10  # 每個分類抽 10 個，總共 20 個
 
-    for cat in selected_cats:
-      links_in_cat = level1_categories[cat]
+    for cat in selected_keys:
+      links_in_cat = active_cats[cat]
       random.shuffle(links_in_cat)
 
       stratified_results[cat] = []
@@ -167,7 +169,7 @@ def check_website():
       for link_url, link_text in links_in_cat:
         if link_url in global_seen_urls:
           continue
-        if cat_count >= target_per_cat or total_sampled_count >= 20:
+        if cat_count >= target_per_cat:
           break
 
         global_seen_urls.add(link_url)
@@ -497,7 +499,7 @@ def check_website():
 
   with open("index.html", "w", encoding="utf-8") as f:
     f.write(html_content)
-  print("架構化分層隨機抽樣報表 index.html 產生成功！")
+  print("雙分類保底架構化抽樣報表 index.html 產生成功！")
 
 
 if __name__ == "__main__":
