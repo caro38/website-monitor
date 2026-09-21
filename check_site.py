@@ -31,7 +31,7 @@ def get_url_depth(url):
   clean_path = url.replace(BASE_URL.rstrip("/"), "")
   parts = [p for p in clean_path.split("/") if p]
   depth = len(parts)
-  return max(1, min(depth, 4))  歸類為 Level 1 至 Level 4
+  return max(1, min(depth, 4))  # 歸類為 Level 1 至 Level 4
 
 
 def crawl_deep_links():
@@ -42,7 +42,6 @@ def crawl_deep_links():
       )
   }
   visited = set()
-  # 階層式儲存池: { 1: [], 2: [], 3: [], 4: [] }
   tiered_pool = {1: [], 2: [], 3: [], 4: []}
 
   try:
@@ -71,11 +70,11 @@ def crawl_deep_links():
             visited.add(clean_url)
             depth = get_url_depth(clean_url)
             tiered_pool[depth].append((clean_url, text))
-            if depth < 3:  # 允許對淺層進行下一輪探勘
+            if depth < 3:
               queue.append(clean_url)
 
     # 進行第二輪淺層遞迴（確保抓到 Level 3 與 Level 4）
-    for sample_url in queue[:5]:  # 控制請求次數以防逾時
+    for sample_url in queue[:5]:
       try:
         sub_res = requests.get(sample_url, headers=headers, timeout=5)
         if sub_res.status_code == 200:
@@ -119,7 +118,6 @@ def check_website():
   today_str = now_utc8.strftime("%Y-%m-%d")
 
   try:
-    # 1. 首頁可用性
     res = requests.get(BASE_URL, headers=headers, timeout=REQUEST_TIMEOUT)
     if res.status_code != 200:
       raise Exception("首頁無法正常存取")
@@ -143,13 +141,8 @@ def check_website():
           )
       )
 
-    # ==========================================================
-    # 2. 執行 Level 1 至 Level 4 深度遞迴抽樣
-    # ==========================================================
     tiered_pool = crawl_deep_links()
 
-    # 多層次混合隨機抽樣配置（總計 20 組）
-    # Level 1: 3組, Level 2: 5組, Level 3: 7組, Level 4: 5組
     sampling_quota = {1: 3, 2: 5, 3: 7, 4: 5}
     sampled_items = []
     global_seen = set()
@@ -164,7 +157,6 @@ def check_website():
           sampled_items.append((depth, url, title))
           count += 1
 
-    # 如果特定深度池不夠，從其他深度補足 20 組
     if len(sampled_items) < 20:
       all_flat = [
           (d, u, t) for d, pool in tiered_pool.values() for d, u, t in pool
@@ -175,14 +167,11 @@ def check_website():
           global_seen.add(u)
           sampled_items.append((d, u, t))
 
-    # 執行狀態驗證與分組呈現
     depth_results = {1: [], 2: [], 3: [], 4: []}
     link_broken_total = 0
-    today_audit_records = []
 
     for depth, link_url, link_text in sampled_items:
       status_code = 0
-      is_ok = False
       try:
         sub_res = requests.get(
             link_url,
@@ -192,7 +181,6 @@ def check_website():
         )
         status_code = sub_res.status_code
         if status_code in [200, 301, 302, 307, 308]:
-          is_ok = True
           depth_results[depth].append(
               f'<div class="link-item">✅ <b><a href="{link_url}" target="_blank">{link_text}</a></b><br>'
               f'<a href="{link_url}" target="_blank" class="url-text">{link_url}</a> '
@@ -207,23 +195,11 @@ def check_website():
           )
       except Exception:
         link_broken_total += 1
-        is_ok = False
-        status_code = 0
         depth_results[depth].append(
             f'<div class="link-item err">❌ <b><a href="{link_url}" target="_blank">{link_text}</a></b><br>'
             f'<a href="{link_url}" target="_blank" class="url-text">{link_url}</a> (深度 L{depth} | 連線逾時)</div>'
         )
 
-      # 收集今日各項目的稽核軌跡資料
-      today_audit_records.append({
-          "title": link_text,
-          "url": link_url,
-          "depth": depth,
-          "status": status_code,
-          "ok": is_ok,
-      })
-
-    # 組合樹狀檢核區塊 HTML
     tree_html_blocks = []
     for d in range(1, 5):
       items = depth_results[d]
@@ -247,10 +223,6 @@ def check_website():
       if not is_link_success:
         anomaly_count += 1
 
-    # ==========================================================
-    # 3. 最新公告與搜尋驗證
-    # ==========================================================
-    # (此處保留標準公告與搜尋驗證模組...)
     day_of_year = now_utc8.timetuple().tm_yday
     current_keyword = SEARCH_KEYWORDS_POOL[
         day_of_year % len(SEARCH_KEYWORDS_POOL)
@@ -283,7 +255,6 @@ def check_website():
 
   now = now_utc8.strftime("%Y-%m-%d %H:%M:%S")
 
-  # 產生當日即時報表 index.html
   cards_html = ""
   for title, is_success, details, layout_type in results:
     bg_color = "#27ae60" if is_success else "#c0392b"
@@ -331,7 +302,7 @@ def check_website():
         .link-item a:hover {{ text-decoration: underline; }}
         .url-text {{ font-size: 10px; color: #718096; word-break: break-all; text-decoration: none; }}
         .code {{ color: #4a5568; font-size: 10px; font-weight: bold; }}
-        .footer {{ display: { "flex" }; justify-content: space-between; align-items: center; border-top: 1px solid #edf2f7; padding-top: 12px; font-size: 11px; color: #718096; }}
+        .footer {{ display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #edf2f7; padding-top: 12px; font-size: 11px; color: #718096; }}
         .nav-btn {{ background: #3182ce; color: white; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; }}
         @media screen and (max-width: 768px) {{
             .grid-container {{ display: flex; flex-direction: column; }}
