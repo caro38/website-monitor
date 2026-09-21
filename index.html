@@ -3,60 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>機關網站架構化抽檢佐證報表</title>
+    <title>機關網站 Level 1-4 深度遞迴抽檢佐證報表</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f6; color: #2c3e50; margin: 0; padding: 15px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f4f7f6; color: #2c3e50; margin: 0; padding: 15px; }
         .wrapper { max-width: 1100px; margin: 0 auto; background: white; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #edf2f7; padding-bottom: 12px; margin-bottom: 15px; }
         .header-left h2 { margin: 0 0 4px 0; font-size: 20px; color: #1a202c; }
         .header-left p { margin: 0; font-size: 12px; color: #718096; }
-        .overall-badge { padding: 6px 16px; color: white; background-color: #2ecc71; border-radius: 20px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        
+        .overall-badge { padding: 6px 16px; color: white; background-color: #e67e22; border-radius: 20px; font-weight: bold; font-size: 13px; }
         .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 15px; }
-        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 15px; }
         .card.full-width { grid-column: span 2; }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #edf2f7; padding-bottom: 6px; }
         .card-title { font-weight: bold; font-size: 13px; color: #2d3748; }
         .badge { color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
-        .badge-sub { background: #edf2f7; color: #4a5568; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; float: right; }
-        
+        .badge-sub { background: #edf2f7; color: #4a5568; padding: 2px 6px; border-radius: 4px; font-size: 10px; float: right; }
         .card-body { display: flex; flex-direction: column; gap: 6px; }
-        .card-row { font-size: 11px; color: #4a5568; background: #f8fafc; padding: 6px 10px; border-radius: 4px; border-left: 2px solid #3182ce; line-height: 1.4; }
-        
-        /* 樹狀分類標題樣式 */
+        .card-row { font-size: 11px; color: #4a5568; background: #f8fafc; padding: 6px 10px; border-radius: 4px; border-left: 2px solid #3182ce; }
         .tree-category-title { font-size: 12px; font-weight: bold; color: #2b6cb0; background: #ebf8ff; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border-left: 4px solid #3182ce; }
-        
-        .link-item a, .news-item a, .card-row a { color: #2b6cb0; text-decoration: none; font-weight: bold; }
-        .link-item a:hover, .news-item a:hover, .card-row a:hover { text-decoration: underline; }
-        
+        .link-item a, .card-row a { color: #2b6cb0; text-decoration: none; font-weight: bold; }
+        .link-item a:hover { text-decoration: underline; }
         .url-text { font-size: 10px; color: #718096; word-break: break-all; text-decoration: none; }
-        .url-text:hover { text-decoration: underline; color: #3182ce; }
-        
         .code { color: #4a5568; font-size: 10px; font-weight: bold; }
-        .tag { background: #e2e8f0; color: #4a5568; padding: 1px 4px; border-radius: 3px; font-size: 10px; float: right; }
-        .tag-err { background: #fed7d7; color: #c53030; padding: 1px 4px; border-radius: 3px; font-size: 10px; float: right; }
-
         .footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #edf2f7; padding-top: 12px; font-size: 11px; color: #718096; }
-        .print-btn { background: #3182ce; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; box-shadow: 0 1px 3px rgba(49,130,206,0.3); }
-        .print-btn:hover { background: #2b6cb0; }
-
-        /* RWD 響應式手機版適應設定 */
+        .nav-btn { background: #3182ce; color: white; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; }
         @media screen and (max-width: 768px) {
-            body { padding: 5px; }
-            .wrapper { padding: 15px; width: 100%; box-sizing: border-box; }
-            .grid-container { display: flex; flex-direction: column; gap: 10px; }
+            .grid-container { display: flex; flex-direction: column; }
             .card.full-width { grid-column: span 1; }
             .header { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .overall-badge { align-self: flex-start; }
-        }
-
-        /* A4 列印設定 */
-        @media print {
-            @page { size: A4 portrait; margin: 10mm; }
-            body { background: white; padding: 0; zoom: 90%; }
-            .wrapper { box-shadow: none; padding: 0; max-width: 100%; }
-            .print-btn { display: none; }
-            .card { break-inside: avoid; border: 1px solid #cbd5e0; }
         }
     </style>
 </head>
@@ -64,54 +38,28 @@
     <div class="wrapper">
         <div class="header">
             <div class="header-left">
-                <h2>🏛️ 機關網站架構化每日檢核暨動態佐證報表</h2>
+                <h2>🏛️ 機關網站 Level 1-4 深度遞迴抽檢佐證報表</h2>
                 <p>監控目標：<a href="https://www.forest.gov.tw/" target="_blank" style="color: #3182ce; text-decoration: none;">https://www.forest.gov.tw/</a></p>
             </div>
             <div>
-                <div class="overall-badge">狀態：全面正常 (Operational)</div>
+                <div class="overall-badge">狀態：發現 1 項異常</div>
             </div>
         </div>
-
         <div class="grid-container">
-            
         <div class="card ">
             <div class="card-header">
                 <span class="card-title">首頁可用性與核心關鍵字</span>
                 <span class="badge" style="background-color: #27ae60;">正常</span>
             </div>
-            <div class="card-body">
-                <div class="card-row">目標網址: https://www.forest.gov.tw/</div><div class="card-row">HTTP 200 正常，成功檢出核心關鍵字「林業」</div>
-            </div>
+            <div class="card-body"><div class="card-row">目標網址: https://www.forest.gov.tw/ (HTTP 200 正常)</div></div>
         </div>
         
         <div class="card full-width">
             <div class="card-header">
-                <span class="card-title">網站架構分層隨機抽檢 (共 20 組)</span>
-                <span class="badge" style="background-color: #27ae60;">正常</span>
+                <span class="card-title">全網站 Level 1-4 深度遞迴抽檢 (共 20 組)</span>
+                <span class="badge" style="background-color: #c0392b;">異常</span>
             </div>
-            <div class="card-body">
-                <div class="tree-category-title">📁 Level 1 分類：核心業務第一層導覽（A群組） <span class="badge-sub">抽檢 10 組</span></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0009849" target="_blank">常見問答</a></b><br><a href="https://www.forest.gov.tw/0009849" target="_blank" class="url-text">https://www.forest.gov.tw/0009849</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0004230" target="_blank">圖像授權專區</a></b><br><a href="https://www.forest.gov.tw/0004230" target="_blank" class="url-text">https://www.forest.gov.tw/0004230</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0010760" target="_blank">列管財團法人資訊公開</a></b><br><a href="https://www.forest.gov.tw/0010760" target="_blank" class="url-text">https://www.forest.gov.tw/0010760</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0003241" target="_blank">木材類</a></b><br><a href="https://www.forest.gov.tw/0003241" target="_blank" class="url-text">https://www.forest.gov.tw/0003241</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/Business" target="_blank">業務介紹</a></b><br><a href="https://www.forest.gov.tw/Business" target="_blank" class="url-text">https://www.forest.gov.tw/Business</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://theme.forest.gov.tw/forestplant/" target="_blank">臺灣原生樹木種苗網</a></b><br><a href="https://theme.forest.gov.tw/forestplant/" target="_blank" class="url-text">https://theme.forest.gov.tw/forestplant/</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0000055" target="_blank">造林生產</a></b><br><a href="https://www.forest.gov.tw/0000055" target="_blank" class="url-text">https://www.forest.gov.tw/0000055</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/intro" target="_blank">本署簡介</a></b><br><a href="https://www.forest.gov.tw/intro" target="_blank" class="url-text">https://www.forest.gov.tw/intro</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/NBSAP" target="_blank">國家生物多樣性策略與行動計畫(NBSAP)</a></b><br><a href="https://www.forest.gov.tw/NBSAP" target="_blank" class="url-text">https://www.forest.gov.tw/NBSAP</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0010404" target="_blank">消費者服務專區</a></b><br><a href="https://www.forest.gov.tw/0010404" target="_blank" class="url-text">https://www.forest.gov.tw/0010404</a> <span class="code">(狀態: 200)</span></div></div><div class="tree-category-title">📁 Level 1 分類：核心業務第一層導覽（B群組） <span class="badge-sub">抽檢 10 組</span></div><div class="card-row"><div class="link-item">✅ <b><a href="https://qlakenew.forest.gov.tw/public/" target="_blank">國有林防災應變及堰塞湖監測系統</a></b><br><a href="https://qlakenew.forest.gov.tw/public/" target="_blank" class="url-text">https://qlakenew.forest.gov.tw/public/</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://afrts.forest.gov.tw/TP01_1.aspx" target="_blank">阿里山林鐵路訂票系統線上訂票， 輕鬆搭乘阿里山森林鐵路！了解更多</a></b><br><a href="https://afrts.forest.gov.tw/TP01_1.aspx" target="_blank" class="url-text">https://afrts.forest.gov.tw/TP01_1.aspx</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/wildlife" target="_blank">野生物管理</a></b><br><a href="https://www.forest.gov.tw/wildlife" target="_blank" class="url-text">https://www.forest.gov.tw/wildlife</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0004651" target="_blank">更多所屬機關簡介</a></b><br><a href="https://www.forest.gov.tw/0004651" target="_blank" class="url-text">https://www.forest.gov.tw/0004651</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/administration" target="_blank">首長及主管簡介</a></b><br><a href="https://www.forest.gov.tw/administration" target="_blank" class="url-text">https://www.forest.gov.tw/administration</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0004767" target="_blank">圖資下載</a></b><br><a href="https://www.forest.gov.tw/0004767" target="_blank" class="url-text">https://www.forest.gov.tw/0004767</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0010404/0076570" target="_blank">2025/07/23   消費者服務專區    「消費者保護研究第29輯」</a></b><br><a href="https://www.forest.gov.tw/0010404/0076570" target="_blank" class="url-text">https://www.forest.gov.tw/0010404/0076570</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/suggestion" target="_blank">首長信箱</a></b><br><a href="https://www.forest.gov.tw/suggestion" target="_blank" class="url-text">https://www.forest.gov.tw/suggestion</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0004765" target="_blank">保育藍圖</a></b><br><a href="https://www.forest.gov.tw/0004765" target="_blank" class="url-text">https://www.forest.gov.tw/0004765</a> <span class="code">(狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0009779" target="_blank">綠網計畫建置</a></b><br><a href="https://www.forest.gov.tw/0009779" target="_blank" class="url-text">https://www.forest.gov.tw/0009779</a> <span class="code">(狀態: 200)</span></div></div>
-            </div>
-        </div>
-        
-        <div class="card ">
-            <div class="card-header">
-                <span class="card-title">最新公告頁面有效性 (抽樣 5 篇)</span>
-                <span class="badge" style="background-color: #27ae60;">正常</span>
-            </div>
-            <div class="card-body">
-                <div class="card-row"><div class="news-item">✅ <b><a href="https://www.forest.gov.tw/driftwood-news" target="_blank">漂流木撿拾公告</a></b><br><a href="https://www.forest.gov.tw/driftwood-news" target="_blank" class="url-text">https://www.forest.gov.tw/driftwood-news</a> <span class="tag">正常載入</span></div></div><div class="card-row"><div class="news-item">✅ <b><a href="https://www.forest.gov.tw/news/0079292" target="_blank">2026/09/21   最新消息 森林育樂組   國有林地舉辦活動應先申請　高環境衝擊活動將不予許可</a></b><br><a href="https://www.forest.gov.tw/news/0079292" target="_blank" class="url-text">https://www.forest.gov.tw/news/0079292</a> <span class="tag">正常載入</span></div></div><div class="card-row"><div class="news-item">✅ <b><a href="https://www.forest.gov.tw/news/0079288" target="_blank">2026/09/21   最新消息 花蓮分署   115年9月21日 萬里溪堰塞湖現況資訊</a></b><br><a href="https://www.forest.gov.tw/news/0079288" target="_blank" class="url-text">https://www.forest.gov.tw/news/0079288</a> <span class="tag">正常載入</span></div></div><div class="card-row"><div class="news-item">✅ <b><a href="https://www.forest.gov.tw/news/0079285" target="_blank">2026/09/20   最新消息 花蓮分署   115年9月20日 萬里溪堰塞湖現況資訊</a></b><br><a href="https://www.forest.gov.tw/news/0079285" target="_blank" class="url-text">https://www.forest.gov.tw/news/0079285</a> <span class="tag">正常載入</span></div></div><div class="card-row"><div class="news-item">✅ <b><a href="https://www.forest.gov.tw/news/0079289" target="_blank">2026/09/19   最新消息 屏東分署   守護羅漢山共拔入侵蔓 林業保育署屏東分署攜手在地社區及企業守護十八羅漢山生態</a></b><br><a href="https://www.forest.gov.tw/news/0079289" target="_blank" class="url-text">https://www.forest.gov.tw/news/0079289</a> <span class="tag">正常載入</span></div></div>
-            </div>
-        </div>
-        
-        <div class="card ">
-            <div class="card-header">
-                <span class="card-title">官方核心服務與專區可用性驗證</span>
-                <span class="badge" style="background-color: #27ae60;">正常</span>
-            </div>
-            <div class="card-body">
-                <div class="card-row">✅ <a href="https://www.forest.gov.tw/contactus" target="_blank"><b>官方聯絡資訊與服務專線</b></a><br><a href="https://www.forest.gov.tw/contactus" target="_blank" class="url-text">https://www.forest.gov.tw/contactus</a> (狀態碼: 200 正常)</div><div class="card-row">✅ <a href="https://www.forest.gov.tw/plan" target="_blank"><b>重大政策與計畫專區</b></a><br><a href="https://www.forest.gov.tw/plan" target="_blank" class="url-text">https://www.forest.gov.tw/plan</a> (狀態碼: 200 正常)</div>
-            </div>
+            <div class="card-body"><div class="tree-category-title">📁 網站深度檢測：Level 1 層級 <span class="badge-sub">抽檢 3 組</span></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0001724" target="_blank">綠化苗木申請</a></b><br><a href="https://www.forest.gov.tw/0001724" target="_blank" class="url-text">https://www.forest.gov.tw/0001724</a> <span class="code">(深度 L1 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0010639" target="_blank">林業保育署114年度自行管制計畫評核結果</a></b><br><a href="https://www.forest.gov.tw/0010639" target="_blank" class="url-text">https://www.forest.gov.tw/0010639</a> <span class="code">(深度 L1 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/faqs?p=2" target="_blank">下一頁</a></b><br><a href="https://www.forest.gov.tw/faqs?p=2" target="_blank" class="url-text">https://www.forest.gov.tw/faqs?p=2</a> <span class="code">(深度 L1 | 狀態: 200)</span></div></div><div class="tree-category-title">📁 網站深度檢測：Level 2 層級 <span class="badge-sub">抽檢 5 組</span></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0004771/0079152" target="_blank">2026/09/03   廉政宣導    115年國高中職場專業倫理漫畫教材《職場開局怎麼玩？新鮮人工作4大生存攻略》</a></b><br><a href="https://www.forest.gov.tw/0004771/0079152" target="_blank" class="url-text">https://www.forest.gov.tw/0004771/0079152</a> <span class="code">(深度 L2 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://recreation.forest.gov.tw/" target="_blank">台灣山林悠遊網</a></b><br><a href="https://recreation.forest.gov.tw/" target="_blank" class="url-text">https://recreation.forest.gov.tw/</a> <span class="code">(深度 L2 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/news/0079289" target="_blank">2026/09/19   最新消息 屏東分署   守護羅漢山共拔入侵蔓 林業保育署屏東分署攜手在地社區及企業守護十八羅漢山生態</a></b><br><a href="https://www.forest.gov.tw/news/0079289" target="_blank" class="url-text">https://www.forest.gov.tw/news/0079289</a> <span class="code">(深度 L2 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://www.forest.gov.tw/0004771/0079244" target="_blank">2026/09/14   廉政宣導    「浯島追影：廉能調查密碼」</a></b><br><a href="https://www.forest.gov.tw/0004771/0079244" target="_blank" class="url-text">https://www.forest.gov.tw/0004771/0079244</a> <span class="code">(深度 L2 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://hualien.forest.gov.tw" target="_blank">花蓮分署</a></b><br><a href="https://hualien.forest.gov.tw" target="_blank" class="url-text">https://hualien.forest.gov.tw</a> <span class="code">(深度 L2 | 狀態: 200)</span></div></div><div class="tree-category-title">📁 網站深度檢測：Level 3 層級 <span class="badge-sub">抽檢 7 組</span></div><div class="card-row"><div class="link-item">✅ <b><a href="https://afrts.forest.gov.tw/TP01_1.aspx" target="_blank">阿里山林鐵路訂票系統線上訂票， 輕鬆搭乘阿里山森林鐵路！了解更多</a></b><br><a href="https://afrts.forest.gov.tw/TP01_1.aspx" target="_blank" class="url-text">https://afrts.forest.gov.tw/TP01_1.aspx</a> <span class="code">(深度 L3 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://theme.forest.gov.tw/smartmap/" target="_blank">森林旅遊地圖</a></b><br><a href="https://theme.forest.gov.tw/smartmap/" target="_blank" class="url-text">https://theme.forest.gov.tw/smartmap/</a> <span class="code">(深度 L3 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://theme.forest.gov.tw/dashboard/" target="_blank">數位儀表板</a></b><br><a href="https://theme.forest.gov.tw/dashboard/" target="_blank" class="url-text">https://theme.forest.gov.tw/dashboard/</a> <span class="code">(深度 L3 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://taiwanwood.forest.gov.tw/zh-tw/" target="_blank">臺灣木材網</a></b><br><a href="https://taiwanwood.forest.gov.tw/zh-tw/" target="_blank" class="url-text">https://taiwanwood.forest.gov.tw/zh-tw/</a> <span class="code">(深度 L3 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://esg.forest.gov.tw/ForestESG" target="_blank">自然碳匯與生物多樣性專案媒合平臺</a></b><br><a href="https://esg.forest.gov.tw/ForestESG" target="_blank" class="url-text">https://esg.forest.gov.tw/ForestESG</a> <span class="code">(深度 L3 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://theme.forest.gov.tw/forestplant/" target="_blank">臺灣原生樹木種苗網</a></b><br><a href="https://theme.forest.gov.tw/forestplant/" target="_blank" class="url-text">https://theme.forest.gov.tw/forestplant/</a> <span class="code">(深度 L3 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://qlakenew.forest.gov.tw/public/" target="_blank">國有林防災應變及堰塞湖監測系統</a></b><br><a href="https://qlakenew.forest.gov.tw/public/" target="_blank" class="url-text">https://qlakenew.forest.gov.tw/public/</a> <span class="code">(深度 L3 | 狀態: 200)</span></div></div><div class="tree-category-title">📁 網站深度檢測：Level 4 層級 <span class="badge-sub">抽檢 5 組</span></div><div class="card-row"><div class="link-item">✅ <b><a href="https://recreation.forest.gov.tw/Forestry/Rail" target="_blank">軌道維護資訊</a></b><br><a href="https://recreation.forest.gov.tw/Forestry/Rail" target="_blank" class="url-text">https://recreation.forest.gov.tw/Forestry/Rail</a> <span class="code">(深度 L4 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://recreation.forest.gov.tw/Topic/MSTW" target="_blank">山海圳國家綠道</a></b><br><a href="https://recreation.forest.gov.tw/Topic/MSTW" target="_blank" class="url-text">https://recreation.forest.gov.tw/Topic/MSTW</a> <span class="code">(深度 L4 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item err">❌ <b><a href="https://ecollect.forest.gov.tw/Ecological/ProjectManager/ResultPresentation.aspx" target="_blank">生態調查資料庫系統</a></b><br><a href="https://ecollect.forest.gov.tw/Ecological/ProjectManager/ResultPresentation.aspx" target="_blank" class="url-text">https://ecollect.forest.gov.tw/Ecological/ProjectManager/ResultPresentation.aspx</a> <span class="code">(深度 L4 | 異常: 404)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://theme.forest.gov.tw/dashboard/0010445.html" target="_blank">觀看更多數據</a></b><br><a href="https://theme.forest.gov.tw/dashboard/0010445.html" target="_blank" class="url-text">https://theme.forest.gov.tw/dashboard/0010445.html</a> <span class="code">(深度 L4 | 狀態: 200)</span></div></div><div class="card-row"><div class="link-item">✅ <b><a href="https://theme.forest.gov.tw/dashboard/0010405.html" target="_blank">觀看更多數據</a></b><br><a href="https://theme.forest.gov.tw/dashboard/0010405.html" target="_blank" class="url-text">https://theme.forest.gov.tw/dashboard/0010405.html</a> <span class="code">(深度 L4 | 狀態: 200)</span></div></div></div>
         </div>
         
         <div class="card ">
@@ -119,16 +67,12 @@
                 <span class="card-title">站內搜尋功能驗證 (每日輪替)</span>
                 <span class="badge" style="background-color: #27ae60;">正常</span>
             </div>
-            <div class="card-body">
-                <div class="card-row">輪替測試關鍵字：<code>苗木</code><br>檢索網址：<a href="https://www.forest.gov.tw/search?q=苗木" target="_blank" class="url-text">https://www.forest.gov.tw/search?q=苗木</a> (狀態碼: 200) - 檢索引擎運作正常</div>
-            </div>
+            <div class="card-body"><div class="card-row">測試關鍵字：<code>登山</code><br>檢索網址：<a href='https://www.forest.gov.tw/search?q=登山' target='_blank' class='url-text'>https://www.forest.gov.tw/search?q=登山</a></div></div>
         </div>
-        
         </div>
-
         <div class="footer">
-            <div>檢核執行時間（台北時間）：2026-09-21 21:02:16</div>
-            <div><button class="print-btn" onclick="window.print()">🖨️ 列印 / 儲存為正式 PDF 報表</button></div>
+            <div>檢核執行時間（台北時間）：2026-09-22 00:34:02</div>
+            <div><a href="history.html" class="nav-btn">📊 查看全網站架構年度歷史統計總覽</a></div>
         </div>
     </div>
 </body>
