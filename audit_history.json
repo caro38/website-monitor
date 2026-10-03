@@ -1738,5 +1738,150 @@
         "ok": false
       }
     ]
+  },
+  {
+    "date": "2026-10-04",
+    "items": [
+      {
+        "title": "內部控制聲明書專區",
+        "url": "https://www.forest.gov.tw/0002787",
+        "depth": 1,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "公文函釋",
+        "url": "https://www.forest.gov.tw/0000062",
+        "depth": 1,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "關於本署",
+        "url": "https://www.forest.gov.tw/about",
+        "depth": 1,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "2026/09/23   業務公告 森林育樂組   「民間機構參與興建暨營運阿里山賓館案」114年度營運績效評估結果為「營運績效良好」",
+        "url": "https://www.forest.gov.tw/0004548/0079309",
+        "depth": 2,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "2026/09/21   事求人    農業部林業及自然保育署約用人員徵才公告(集水區治理組)",
+        "url": "https://www.forest.gov.tw/job/0079131",
+        "depth": 2,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "2026/09/17   廉政宣導    「運動員法律常識手冊」",
+        "url": "https://www.forest.gov.tw/0004771/0079264",
+        "depth": 2,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "台灣山林悠遊網",
+        "url": "https://recreation.forest.gov.tw/",
+        "depth": 2,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "臺灣森林防範盜伐資訊站",
+        "url": "https://ilprevent.forest.gov.tw/",
+        "depth": 2,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "數位儀表板",
+        "url": "https://theme.forest.gov.tw/dashboard/",
+        "depth": 3,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "臺灣原生樹木種苗網",
+        "url": "https://theme.forest.gov.tw/forestplant/",
+        "depth": 3,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "國有林防災應變及堰塞湖監測系統",
+        "url": "https://qlakenew.forest.gov.tw/public/",
+        "depth": 3,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "臺灣木材網",
+        "url": "https://taiwanwood.forest.gov.tw/zh-tw/",
+        "depth": 3,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "自然碳匯與生物多樣性專案媒合平臺",
+        "url": "https://esg.forest.gov.tw/ForestESG",
+        "depth": 3,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "森林旅遊地圖",
+        "url": "https://theme.forest.gov.tw/smartmap/",
+        "depth": 3,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "阿里山林鐵路訂票系統線上訂票， 輕鬆搭乘阿里山森林鐵路！了解更多",
+        "url": "https://afrts.forest.gov.tw/TP01_1.aspx",
+        "depth": 3,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "山海圳國家綠道",
+        "url": "https://recreation.forest.gov.tw/Topic/MSTW",
+        "depth": 4,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "觀看更多數據",
+        "url": "https://theme.forest.gov.tw/dashboard/0010445.html",
+        "depth": 4,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "花蓮分署",
+        "url": "https://www.facebook.com/hualien.forest.gov.tw/?locale=zh_TW",
+        "depth": 4,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "軌道維護資訊",
+        "url": "https://recreation.forest.gov.tw/Forestry/Rail",
+        "depth": 4,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "生態調查資料庫系統",
+        "url": "https://ecollect.forest.gov.tw/Ecological/ProjectManager/ResultPresentation.aspx",
+        "depth": 4,
+        "status": 0,
+        "ok": false
+      }
+    ]
   }
 ]
