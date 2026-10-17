@@ -3768,5 +3768,150 @@
         "ok": true
       }
     ]
+  },
+  {
+    "date": "2026-10-18",
+    "items": [
+      {
+        "title": "職掌與組織架構",
+        "url": "https://www.forest.gov.tw/Organize",
+        "depth": 1,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "遊說法專區",
+        "url": "https://www.forest.gov.tw/0008575",
+        "depth": 1,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "相關連結",
+        "url": "https://www.forest.gov.tw/link",
+        "depth": 1,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "嘉義分署",
+        "url": "https://chiayi.forest.gov.tw",
+        "depth": 2,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "自然保護區域進入申請應如何申請? 具備什麼條件? 需要進入臺灣自然保護區域的您不可不知!了解更多",
+        "url": "https://pa.forest.gov.tw/",
+        "depth": 2,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "臺中分署",
+        "url": "https://taichung.forest.gov.tw",
+        "depth": 2,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "宜蘭分署",
+        "url": "https://yilan.forest.gov.tw",
+        "depth": 2,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "2026/10/17   最新消息 森林管理組  HOT  綠色奧斯卡榮耀登場！18組林業保育典範 共築臺灣山林永續未來",
+        "url": "https://www.forest.gov.tw/news/0079446",
+        "depth": 2,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "阿里山林鐵路訂票系統線上訂票， 輕鬆搭乘阿里山森林鐵路！了解更多",
+        "url": "https://afrts.forest.gov.tw/TP01_1.aspx",
+        "depth": 3,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "臺灣木材網",
+        "url": "https://taiwanwood.forest.gov.tw/zh-tw/",
+        "depth": 3,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "自然碳匯與生物多樣性專案媒合平臺",
+        "url": "https://esg.forest.gov.tw/ForestESG",
+        "depth": 3,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "臺灣原生樹木種苗網",
+        "url": "https://theme.forest.gov.tw/forestplant/",
+        "depth": 3,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "森林旅遊地圖",
+        "url": "https://theme.forest.gov.tw/smartmap/",
+        "depth": 3,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "國有林防災應變及堰塞湖監測系統",
+        "url": "https://qlakenew.forest.gov.tw/public/",
+        "depth": 3,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "數位儀表板",
+        "url": "https://theme.forest.gov.tw/dashboard/",
+        "depth": 3,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "軌道維護資訊",
+        "url": "https://recreation.forest.gov.tw/Forestry/Rail",
+        "depth": 4,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "山海圳國家綠道",
+        "url": "https://recreation.forest.gov.tw/Topic/MSTW",
+        "depth": 4,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "花蓮分署",
+        "url": "https://www.facebook.com/hualien.forest.gov.tw/?locale=zh_TW",
+        "depth": 4,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "觀看更多數據",
+        "url": "https://theme.forest.gov.tw/dashboard/0010405.html",
+        "depth": 4,
+        "status": 200,
+        "ok": true
+      },
+      {
+        "title": "觀看更多數據",
+        "url": "https://theme.forest.gov.tw/dashboard/0010406.html",
+        "depth": 4,
+        "status": 200,
+        "ok": true
+      }
+    ]
   }
 ]
